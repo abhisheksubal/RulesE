@@ -463,8 +463,13 @@ For more details on NCalc syntax, see the [NCalc documentation](https://github.c
 
 To use this rule engine in a Unity project:
 
-1. Copy the `RuleEngine` folder to your Unity project's `Assets/Scripts` directory
-2. Create a MonoBehaviour that wraps the rule engine functionality:
+1. **Setup the Rule Engine in Unity:**
+   - Copy the `RuleEngine` folder to your Unity project's `Assets/Scripts` directory
+   - Create a `Plugins` folder in your Unity project's `Assets` directory if it doesn't exist already
+   - Download NCalc.dll (version 1.3.8) from [NCalc GitHub releases](https://github.com/ncalc/ncalc/releases/tag/1.3.8)
+   - Place NCalc.dll in the `Assets/Plugins` folder in your Unity project
+
+2. **Create a MonoBehaviour wrapper:**
 
 ```csharp
 using System.Collections.Generic;
@@ -491,6 +496,65 @@ public class GameRuleEngine : MonoBehaviour
     public Dictionary<string, object> ProcessGameState(Dictionary<string, object> gameState)
     {
         return _ruleEngine.ExecuteRules(gameState);
+    }
+}
+```
+
+3. **Store rule definitions as TextAssets:**
+   - Create a `Resources/Rules` folder in your Unity project
+   - Save your rule JSON definitions as text files in this folder
+   - Access them using `Resources.Load<TextAsset>("Rules/your_rule_name")`
+
+4. **Handling NCalc Compatibility:**
+   - NCalc is a .NET Framework library, but it works in Unity with .NET Standard 2.1
+   - If you encounter any compatibility issues, consider using a Unity-compatible fork of NCalc
+   - For IL2CPP builds, ensure NCalc is included in the [link.xml](https://docs.unity3d.com/Manual/ManagedCodeStripping.html) file to prevent code stripping
+
+   Example link.xml file (place in Assets folder):
+   ```xml
+   <linker>
+     <assembly fullname="NCalc" preserve="all"/>
+     <assembly fullname="RuleEngine" preserve="all"/>
+   </linker>
+   ```
+
+5. **Testing in Unity:**
+   - Create a simple test script that loads and executes rules
+   - Use Unity's Debug.Log to verify rule outputs
+   - Test on both the Editor and target platforms
+
+### Example Unity Integration
+
+```csharp
+// Example of using the rule engine in a game context
+public class PlayerController : MonoBehaviour
+{
+    [SerializeField] private GameRuleEngine ruleEngine;
+    
+    private void ApplyGameRules()
+    {
+        // Collect current game state
+        var gameState = new Dictionary<string, object>
+        {
+            { "playerScore", 1500 },
+            { "isPremium", PlayerPrefs.GetInt("premium", 0) == 1 },
+            { "daysPlayed", PlayerPrefs.GetInt("days_played", 0) },
+            { "playerLevel", PlayerStats.CurrentLevel }
+        };
+        
+        // Process rules
+        var results = ruleEngine.ProcessGameState(gameState);
+        
+        // Apply results
+        if (results.TryGetValue("bonus", out var bonus))
+        {
+            ApplyScoreBonus(Convert.ToDouble(bonus));
+        }
+        
+        if (results.TryGetValue("specialOffer", out var offer))
+        {
+            ShowSpecialOffer(offer.ToString());
+        }
     }
 }
 ```
