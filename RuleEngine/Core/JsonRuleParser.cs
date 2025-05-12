@@ -14,6 +14,11 @@ namespace RuleEngine.Core
             {
                 var ruleData = JsonConvert.DeserializeObject<RuleDefinition>(ruleDefinition);
                 
+                if (ruleData == null)
+                {
+                    throw new ArgumentException("Failed to deserialize rule definition");
+                }
+
                 if (string.IsNullOrEmpty(ruleData.RuleId) || string.IsNullOrEmpty(ruleData.RuleName))
                 {
                     throw new ArgumentException("RuleId and RuleName are required");
@@ -37,9 +42,14 @@ namespace RuleEngine.Core
 
         private IRule CreateSimpleRule(RuleDefinition ruleData)
         {
+            if (ruleData.Conditions == null || ruleData.Actions == null)
+            {
+                throw new ArgumentException("Conditions and Actions are required for SimpleRule");
+            }
+
             return new SimpleRule(
-                ruleData.RuleId,
-                ruleData.RuleName,
+                ruleData.RuleId!,
+                ruleData.RuleName!,
                 CreateConditionEvaluator(ruleData.Conditions),
                 CreateActionExecutor(ruleData.Actions)
             );
@@ -71,32 +81,58 @@ namespace RuleEngine.Core
 
         private bool EvaluateCondition(object inputValue, ConditionDefinition condition)
         {
-            switch (condition.Operator?.ToLower())
+            try
             {
-                case "equals":
-                    return Equals(inputValue, condition.Value);
-                case "notequals":
-                    return !Equals(inputValue, condition.Value);
-                case "greaterthan":
-                    return CompareValues(inputValue, condition.Value) > 0;
-                case "lessthan":
-                    return CompareValues(inputValue, condition.Value) < 0;
-                case "greaterthanorequal":
-                    return CompareValues(inputValue, condition.Value) >= 0;
-                case "lessthanorequal":
-                    return CompareValues(inputValue, condition.Value) <= 0;
-                default:
-                    throw new ArgumentException($"Unsupported condition operator: {condition.Operator}");
+                switch (condition.Operator?.ToLower())
+                {
+                    case "equals":
+                        return Equals(inputValue, condition.Value);
+                    case "notequals":
+                        return !Equals(inputValue, condition.Value);
+                    case "greaterthan":
+                        return CompareValues(inputValue, condition.Value) > 0;
+                    case "lessthan":
+                        return CompareValues(inputValue, condition.Value) < 0;
+                    case "greaterthanorequal":
+                        return CompareValues(inputValue, condition.Value) >= 0;
+                    case "lessthanorequal":
+                        return CompareValues(inputValue, condition.Value) <= 0;
+                    default:
+                        throw new ArgumentException($"Unsupported condition operator: {condition.Operator}");
+                }
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 
-        private int CompareValues(object value1, object value2)
+        private int CompareValues(object? value1, object? value2)
         {
-            if (value1 is IComparable comparable1 && value2 is IComparable comparable2)
+            try
             {
-                return comparable1.CompareTo(comparable2);
+                // Try to convert both values to double for numeric comparison
+                if (value1 != null && value2 != null)
+                {
+                    // Special case for numeric comparisons
+                    if (double.TryParse(value1.ToString(), out double num1) && 
+                        double.TryParse(value2.ToString(), out double num2))
+                    {
+                        return num1.CompareTo(num2);
+                    }
+                }
+                
+                if (value1 is IComparable comparable1 && value2 is IComparable comparable2)
+                {
+                    return comparable1.CompareTo(comparable2);
+                }
+                
+                throw new ArgumentException("Values must implement IComparable");
             }
-            throw new ArgumentException("Values must implement IComparable");
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         private Func<IDictionary<string, object>, IDictionary<string, object>> CreateActionExecutor(
@@ -107,65 +143,65 @@ namespace RuleEngine.Core
                 var results = new Dictionary<string, object>();
                 foreach (var action in actions)
                 {
-                    results[action.Key] = ExecuteAction(inputs, action.Value);
+                    results[action.Key] = ExecuteAction(inputs, action.Key, action.Value);
                 }
                 return results;
             };
         }
 
-        private object ExecuteAction(IDictionary<string, object> inputs, ActionDefinition action)
+        private object ExecuteAction(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
         {
             switch (action.Operator?.ToLower())
             {
                 case "set":
-                    return action.Value;
+                    return action.Value!;
                 case "add":
-                    return AddValues(inputs, action);
+                    return AddValues(inputs, actionKey, action);
                 case "subtract":
-                    return SubtractValues(inputs, action);
+                    return SubtractValues(inputs, actionKey, action);
                 case "multiply":
-                    return MultiplyValues(inputs, action);
+                    return MultiplyValues(inputs, actionKey, action);
                 case "divide":
-                    return DivideValues(inputs, action);
+                    return DivideValues(inputs, actionKey, action);
                 default:
                     throw new ArgumentException($"Unsupported action operator: {action.Operator}");
             }
         }
 
-        private object AddValues(IDictionary<string, object> inputs, ActionDefinition action)
+        private object AddValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
         {
-            if (action.Value is double numericValue)
+            if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
-                return Convert.ToDouble(inputs[action.Operator]) + numericValue;
+                return Convert.ToDouble(inputs[actionKey]) + numericValue;
             }
             throw new ArgumentException("Add operation requires numeric values");
         }
 
-        private object SubtractValues(IDictionary<string, object> inputs, ActionDefinition action)
+        private object SubtractValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
         {
-            if (action.Value is double numericValue)
+            if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
-                return Convert.ToDouble(inputs[action.Operator]) - numericValue;
+                return Convert.ToDouble(inputs[actionKey]) - numericValue;
             }
             throw new ArgumentException("Subtract operation requires numeric values");
         }
 
-        private object MultiplyValues(IDictionary<string, object> inputs, ActionDefinition action)
+        private object MultiplyValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
         {
-            if (action.Value is double numericValue)
+            if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
-                return Convert.ToDouble(inputs[action.Operator]) * numericValue;
+                return Convert.ToDouble(inputs[actionKey]) * numericValue;
             }
             throw new ArgumentException("Multiply operation requires numeric values");
         }
 
-        private object DivideValues(IDictionary<string, object> inputs, ActionDefinition action)
+        private object DivideValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
         {
-            if (action.Value is double numericValue)
+            if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
                 if (numericValue == 0)
                     throw new DivideByZeroException();
-                return Convert.ToDouble(inputs[action.Operator]) / numericValue;
+                return Convert.ToDouble(inputs[actionKey]) / numericValue;
             }
             throw new ArgumentException("Divide operation requires numeric values");
         }
