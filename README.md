@@ -28,6 +28,7 @@ The test program will demonstrate four different rule scenarios:
 - Level Up Rule
 - Multiple Conditions Rule
 - NCalc Expression Rule
+- Composite Rule
 
 ## Features
 
@@ -39,6 +40,7 @@ The test program will demonstrate four different rule scenarios:
 - Proper type comparison for numeric types
 - Nullable reference type support
 - NCalc expression support for powerful mathematical and logical expressions
+- Composite rules with logical operators (AND, OR, NOT)
 
 ## Recent Changes
 
@@ -48,6 +50,7 @@ The test program will demonstrate four different rule scenarios:
 - Added better error handling
 - Updated project to use .NET Standard 2.1 for library and .NET 9.0 for tests
 - Added NCalc expression-based rule support
+- Added composite rules with logical operators (AND, OR, NOT)
 
 ## Project Structure
 
@@ -62,7 +65,7 @@ RuleEngine/
 ├── Rules/
 │   ├── SimpleRule.cs           # Basic rule implementation
 │   ├── ExpressionRule.cs       # NCalc expression-based rules
-│   └── CompositeRule.cs        # Complex rule implementation (planned)
+│   └── CompositeRule.cs        # Rules with logical operators (AND, OR, NOT)
 └── Models/
     └── RuleDefinition.cs       # Rule definition models
 ```
@@ -111,6 +114,55 @@ The rule engine also supports NCalc expressions for more complex calculations:
 }
 ```
 
+### Composite Rules
+
+Composite rules allow you to combine multiple rules using logical operators (AND, OR, NOT):
+
+```json
+{
+    "ruleId": "veteran_premium_player",
+    "ruleName": "Veteran Premium Player Rule",
+    "type": "composite",
+    "operator": "And",
+    "rules": [
+        {
+            "ruleId": "is_premium",
+            "ruleName": "Is Premium Rule",
+            "type": "simple",
+            "conditions": {
+                "isPremium": {
+                    "operator": "equals",
+                    "value": true
+                }
+            },
+            "actions": {}
+        },
+        {
+            "ruleId": "is_veteran",
+            "ruleName": "Is Veteran Rule",
+            "type": "simple",
+            "conditions": {
+                "daysPlayed": {
+                    "operator": "greaterThanOrEqual",
+                    "value": 30
+                }
+            },
+            "actions": {}
+        }
+    ],
+    "actions": {
+        "specialReward": {
+            "operator": "set",
+            "value": "Veteran Premium Chest"
+        },
+        "gems": {
+            "operator": "set",
+            "value": 500
+        }
+    }
+}
+```
+
 ### Rule Structure
 
 #### Simple Rules
@@ -126,6 +178,14 @@ The rule engine also supports NCalc expressions for more complex calculations:
 - `type`: Must be "expression"
 - `conditionExpression`: NCalc expression that evaluates to a boolean
 - `actionExpressions`: Dictionary of output names to NCalc expressions
+
+#### Composite Rules
+- `ruleId`: Unique identifier for the rule
+- `ruleName`: Human-readable name
+- `type`: Must be "composite"
+- `operator`: Logical operator to combine child rules ("And", "Or", "Not")
+- `rules`: Array of child rule definitions
+- `actions`: Actions to perform when the composite condition is met (optional)
 
 ## Usage Example
 
@@ -252,6 +312,130 @@ string ruleJson = @"{
 }";
 ```
 
+### Composite Rule
+
+```csharp
+string ruleJson = @"{
+    ""ruleId"": ""special_offer"",
+    ""ruleName"": ""Special Offer Rule"",
+    ""type"": ""composite"",
+    ""operator"": ""Or"",
+    ""rules"": [
+        {
+            ""ruleId"": ""is_new_player"",
+            ""ruleName"": ""Is New Player Rule"",
+            ""type"": ""simple"",
+            ""conditions"": {
+                ""daysPlayed"": {
+                    ""operator"": ""lessThan"",
+                    ""value"": 7
+                }
+            },
+            ""actions"": {}
+        },
+        {
+            ""ruleId"": ""is_returning_player"",
+            ""ruleName"": ""Is Returning Player Rule"",
+            ""type"": ""simple"",
+            ""conditions"": {
+                ""daysSinceLastLogin"": {
+                    ""operator"": ""greaterThan"",
+                    ""value"": 30
+                }
+            },
+            ""actions"": {}
+        }
+    ],
+    ""actions"": {
+        ""specialOffer"": {
+            ""operator"": ""set"",
+            ""value"": ""Welcome Pack""
+        },
+        ""discount"": {
+            ""operator"": ""set"",
+            ""value"": 50
+        }
+    }
+}";
+
+ruleEngine.AddRule(ruleJson);
+
+var inputs = new Dictionary<string, object>
+{
+    { "daysPlayed", 3 },
+    { "daysSinceLastLogin", 0 }
+};
+
+var results = ruleEngine.ExecuteRules(inputs);
+// If either condition is met (new player OR returning player),
+// results will contain a special offer and discount
+```
+
+### Combining Composite and Expression Rules
+
+You can combine different rule types for powerful behavior control. Here's an example of a composite rule that uses an expression rule:
+
+```csharp
+string ruleJson = @"{
+    ""ruleId"": ""advanced_combat_rule"",
+    ""ruleName"": ""Advanced Combat Rule"",
+    ""type"": ""composite"",
+    ""operator"": ""And"",
+    ""rules"": [
+        {
+            ""ruleId"": ""player_can_attack"",
+            ""ruleName"": ""Player Can Attack Rule"",
+            ""type"": ""simple"",
+            ""conditions"": {
+                ""isPlayerTurn"": {
+                    ""operator"": ""equals"",
+                    ""value"": true
+                },
+                ""playerStamina"": {
+                    ""operator"": ""greaterThan"",
+                    ""value"": 0
+                }
+            },
+            ""actions"": {}
+        },
+        {
+            ""ruleId"": ""attack_effectiveness"",
+            ""ruleName"": ""Attack Effectiveness Rule"",
+            ""type"": ""expression"",
+            ""conditionExpression"": ""targetIsVulnerable || (weaponType == 'fire' && targetType == 'ice')"",
+            ""actionExpressions"": {
+                ""damageMultiplier"": ""targetIsVulnerable ? 2.0 : (weaponType == 'fire' && targetType == 'ice' ? 1.5 : 1.0)""
+            }
+        }
+    ],
+    ""actions"": {
+        ""attackSuccessful"": {
+            ""operator"": ""set"",
+            ""value"": true
+        },
+        ""combatMessage"": {
+            ""operator"": ""set"",
+            ""value"": ""Attack landed successfully!""
+        }
+    }
+}";
+
+ruleEngine.AddRule(ruleJson);
+
+var inputs = new Dictionary<string, object>
+{
+    { "isPlayerTurn", true },
+    { "playerStamina", 10 },
+    { "targetIsVulnerable", false },
+    { "weaponType", "fire" },
+    { "targetType", "ice" }
+};
+
+var results = ruleEngine.ExecuteRules(inputs);
+// If player can attack AND target is vulnerable or weak to the weapon type,
+// the result will contain attackSuccessful=true, damageMultiplier=1.5, and a combat message
+```
+
 ## NCalc Expression Support
 
 NCalc is a powerful mathematical expressions evaluator. It supports:
@@ -334,7 +518,6 @@ public class GameRuleEngine : MonoBehaviour
 
 ## Future Enhancements
 
-- Composite rule support for complex rule trees
 - Rule serialization/deserialization to/from binary formats
 - Rule validation
 - Rule editor UI
