@@ -465,9 +465,8 @@ To use this rule engine in a Unity project:
 
 1. **Setup the Rule Engine in Unity:**
    - Copy the `RuleEngine` folder to your Unity project's `Assets/Scripts` directory
-   - Create a `Plugins` folder in your Unity project's `Assets` directory if it doesn't exist already
-   - Download NCalc.dll (version 1.3.8) from [NCalc GitHub releases](https://github.com/ncalc/ncalc/releases/tag/1.3.8)
-   - Place NCalc.dll in the `Assets/Plugins` folder in your Unity project
+   - Copy the `Plugins` folder to your Unity project's `Assets` directory (this contains the required NCalc.dll)
+   - Alternatively, you can download NCalc.dll (version 1.3.8) from [NCalc GitHub releases](https://github.com/ncalc/ncalc/releases/tag/1.3.8) if needed
 
 2. **Create a MonoBehaviour wrapper:**
 
