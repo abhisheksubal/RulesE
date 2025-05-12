@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using RuleEngine.Models;
 using RuleEngine.Rules;
@@ -28,6 +29,8 @@ namespace RuleEngine.Core
                 {
                     case "simple":
                         return CreateSimpleRule(ruleData);
+                    case "expression":
+                        return CreateExpressionRule(ruleData);
                     case "composite":
                         return CreateCompositeRule(ruleData);
                     default:
@@ -55,10 +58,67 @@ namespace RuleEngine.Core
             );
         }
 
+        private IRule CreateExpressionRule(RuleDefinition ruleData)
+        {
+            if (string.IsNullOrEmpty(ruleData.ConditionExpression) || ruleData.ActionExpressions == null || ruleData.ActionExpressions.Count == 0)
+            {
+                throw new ArgumentException("ConditionExpression and ActionExpressions are required for ExpressionRule");
+            }
+
+            return new ExpressionRule(
+                ruleData.RuleId!,
+                ruleData.RuleName!,
+                ruleData.ConditionExpression,
+                ruleData.ActionExpressions
+            );
+        }
+
         private IRule CreateCompositeRule(RuleDefinition ruleData)
         {
-            // Implementation for composite rules
-            throw new NotImplementedException("Composite rules not yet implemented");
+            if (string.IsNullOrEmpty(ruleData.Operator) || ruleData.Rules == null || ruleData.Rules.Count == 0)
+            {
+                throw new ArgumentException("Operator and Rules are required for CompositeRule");
+            }
+
+            // Parse the logical operator
+            if (!Enum.TryParse<LogicalOperator>(ruleData.Operator, true, out var logicalOperator))
+            {
+                throw new ArgumentException($"Invalid logical operator: {ruleData.Operator}. " +
+                                          $"Must be one of: {string.Join(", ", Enum.GetNames(typeof(LogicalOperator)))}");
+            }
+
+            // Parse child rules
+            var childRules = new List<IRule>();
+            foreach (var childRuleData in ruleData.Rules)
+            {
+                // Convert each child rule to JSON and parse it
+                string childRuleJson = JsonConvert.SerializeObject(childRuleData);
+                var childRule = Parse(childRuleJson);
+                childRules.Add(childRule);
+            }
+
+            // Convert actions to ActionDefinition objects
+            IDictionary<string, Rules.ActionDefinition>? compositeActions = null;
+            if (ruleData.Actions != null && ruleData.Actions.Count > 0)
+            {
+                compositeActions = new Dictionary<string, Rules.ActionDefinition>();
+                foreach (var action in ruleData.Actions)
+                {
+                    compositeActions[action.Key] = new Rules.ActionDefinition
+                    {
+                        Operator = action.Value.Operator,
+                        Value = action.Value.Value
+                    };
+                }
+            }
+
+            return new CompositeRule(
+                ruleData.RuleId!,
+                ruleData.RuleName!,
+                logicalOperator,
+                childRules,
+                compositeActions
+            );
         }
 
         private Func<IDictionary<string, object>, bool> CreateConditionEvaluator(
@@ -136,7 +196,7 @@ namespace RuleEngine.Core
         }
 
         private Func<IDictionary<string, object>, IDictionary<string, object>> CreateActionExecutor(
-            Dictionary<string, ActionDefinition> actions)
+            Dictionary<string, Models.ActionDefinition> actions)
         {
             return inputs =>
             {
@@ -149,7 +209,7 @@ namespace RuleEngine.Core
             };
         }
 
-        private object ExecuteAction(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
+        private object ExecuteAction(IDictionary<string, object> inputs, string actionKey, Models.ActionDefinition action)
         {
             switch (action.Operator?.ToLower())
             {
@@ -168,7 +228,7 @@ namespace RuleEngine.Core
             }
         }
 
-        private object AddValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
+        private object AddValues(IDictionary<string, object> inputs, string actionKey, Models.ActionDefinition action)
         {
             if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
@@ -177,7 +237,7 @@ namespace RuleEngine.Core
             throw new ArgumentException("Add operation requires numeric values");
         }
 
-        private object SubtractValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
+        private object SubtractValues(IDictionary<string, object> inputs, string actionKey, Models.ActionDefinition action)
         {
             if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
@@ -186,7 +246,7 @@ namespace RuleEngine.Core
             throw new ArgumentException("Subtract operation requires numeric values");
         }
 
-        private object MultiplyValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
+        private object MultiplyValues(IDictionary<string, object> inputs, string actionKey, Models.ActionDefinition action)
         {
             if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {
@@ -195,7 +255,7 @@ namespace RuleEngine.Core
             throw new ArgumentException("Multiply operation requires numeric values");
         }
 
-        private object DivideValues(IDictionary<string, object> inputs, string actionKey, ActionDefinition action)
+        private object DivideValues(IDictionary<string, object> inputs, string actionKey, Models.ActionDefinition action)
         {
             if (action.Value is double numericValue && inputs.ContainsKey(actionKey))
             {

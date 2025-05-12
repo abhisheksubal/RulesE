@@ -23,10 +23,11 @@ dotnet build
 dotnet run --project RuleEngine.Tests
 ```
 
-The test program will demonstrate three different rule scenarios:
+The test program will demonstrate four different rule scenarios:
 - Score Bonus Rule
 - Level Up Rule
 - Multiple Conditions Rule
+- NCalc Expression Rule
 
 ## Features
 
@@ -37,6 +38,7 @@ The test program will demonstrate three different rule scenarios:
 - Web interface compatible
 - Proper type comparison for numeric types
 - Nullable reference type support
+- NCalc expression support for powerful mathematical and logical expressions
 
 ## Recent Changes
 
@@ -45,6 +47,7 @@ The test program will demonstrate three different rule scenarios:
 - Fixed rule evaluation and execution
 - Added better error handling
 - Updated project to use .NET Standard 2.1 for library and .NET 9.0 for tests
+- Added NCalc expression-based rule support
 
 ## Project Structure
 
@@ -58,12 +61,15 @@ RuleEngine/
 │   └── JsonRuleParser.cs       # JSON-based rule parser
 ├── Rules/
 │   ├── SimpleRule.cs           # Basic rule implementation
+│   ├── ExpressionRule.cs       # NCalc expression-based rules
 │   └── CompositeRule.cs        # Complex rule implementation (planned)
 └── Models/
     └── RuleDefinition.cs       # Rule definition models
 ```
 
 ## Rule Definition Format
+
+### Standard Rules
 
 Rules are defined in JSON format. Here's an example:
 
@@ -80,20 +86,46 @@ Rules are defined in JSON format. Here's an example:
     },
     "actions": {
         "bonus": {
-            "operator": "multiply",
+            "operator": "set",
             "value": 1.5
         }
     }
 }
 ```
 
+### Expression Rules (NCalc)
+
+The rule engine also supports NCalc expressions for more complex calculations:
+
+```json
+{
+    "ruleId": "damage_calculation",
+    "ruleName": "Damage Calculation Rule",
+    "type": "expression",
+    "conditionExpression": "attackRoll > defenseRoll",
+    "actionExpressions": {
+        "damage": "baseDamage * (1 + criticalHit * 0.5) - (defenseValue * 0.2)",
+        "isCritical": "criticalHit == 1",
+        "effectiveAttack": "attackRoll - defenseRoll"
+    }
+}
+```
+
 ### Rule Structure
 
+#### Simple Rules
 - `ruleId`: Unique identifier for the rule
 - `ruleName`: Human-readable name
-- `type`: Rule type (simple, composite, etc.)
+- `type`: Rule type (simple, expression, composite, etc.)
 - `conditions`: Input conditions to evaluate
 - `actions`: Actions to perform when conditions are met
+
+#### Expression Rules
+- `ruleId`: Unique identifier for the rule
+- `ruleName`: Human-readable name
+- `type`: Must be "expression"
+- `conditionExpression`: NCalc expression that evaluates to a boolean
+- `actionExpressions`: Dictionary of output names to NCalc expressions
 
 ## Usage Example
 
@@ -132,6 +164,36 @@ var inputs = new Dictionary<string, object>
 
 var results = ruleEngine.ExecuteRules(inputs);
 // results will contain { "bonus": 1.5 }
+```
+
+### NCalc Expression Rule
+
+```csharp
+string ruleJson = @"{
+    ""ruleId"": ""damage_calculation"",
+    ""ruleName"": ""Damage Calculation Rule"",
+    ""type"": ""expression"",
+    ""conditionExpression"": ""attackRoll > defenseRoll"",
+    ""actionExpressions"": {
+        ""damage"": ""baseDamage * (1 + criticalHit * 0.5) - (defenseValue * 0.2)"",
+        ""isCritical"": ""criticalHit == 1"",
+        ""effectiveAttack"": ""attackRoll - defenseRoll""
+    }
+}";
+
+ruleEngine.AddRule(ruleJson);
+
+var inputs = new Dictionary<string, object>
+{
+    { "attackRoll", 15 },
+    { "defenseRoll", 10 },
+    { "baseDamage", 20 },
+    { "defenseValue", 5 },
+    { "criticalHit", 1 }  // 1 = true, 0 = false
+};
+
+var results = ruleEngine.ExecuteRules(inputs);
+// results may contain calculated damage, isCritical flag, etc.
 ```
 
 ### Multiple Conditions
@@ -189,6 +251,29 @@ string ruleJson = @"{
     }
 }";
 ```
+
+## NCalc Expression Support
+
+NCalc is a powerful mathematical expressions evaluator. It supports:
+
+### Basic Operators
+- Arithmetic: `+`, `-`, `*`, `/`, `%` (modulo)
+- Comparison: `>`, `>=`, `<`, `<=`, `==`, `!=`
+- Logical: `&&` (and), `||` (or), `!` (not)
+- Bitwise: `&`, `|`, `~`, `^`
+
+### Functions
+- Math: `Sin`, `Cos`, `Tan`, `Asin`, `Acos`, `Atan`, `Abs`, `Ceiling`, `Floor`, `Exp`, `Log`, `Pow`, `Sqrt`, `Sign`, etc.
+- String: `Substring`, `Length`, `Contains`, etc.
+- Logical: `if(condition, then, else)`
+
+### Examples
+- Simple math: `2 * (3 + 5)`
+- Using parameters: `score * multiplier`
+- Conditional: `health < 20 ? "Critical" : "Normal"`
+- Complex formulas: `damage * (1 - (defense / 100)) * (isCritical ? 2 : 1)`
+
+For more details on NCalc syntax, see the [NCalc documentation](https://github.com/ncalc/ncalc).
 
 ## Unity Integration
 

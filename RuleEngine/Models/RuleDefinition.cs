@@ -14,11 +14,26 @@ namespace RuleEngine.Models
         [JsonProperty("type")]
         public string? Type { get; set; }
 
+        // For simple rules
         [JsonProperty("conditions")]
         public Dictionary<string, ConditionDefinition>? Conditions { get; set; }
 
         [JsonProperty("actions")]
         public Dictionary<string, ActionDefinition>? Actions { get; set; }
+
+        // For expression rules
+        [JsonProperty("conditionExpression")]
+        public string? ConditionExpression { get; set; }
+
+        [JsonProperty("actionExpressions")]
+        public Dictionary<string, string>? ActionExpressions { get; set; }
+        
+        // For composite rules
+        [JsonProperty("operator")]
+        public string? Operator { get; set; }
+        
+        [JsonProperty("rules")]
+        public List<RuleDefinition>? Rules { get; set; }
     }
 
     public class ConditionDefinition
