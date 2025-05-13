@@ -1,0 +1,116 @@
+# Unity Integration
+
+This document explains how to integrate the Rule Engine into a Unity project.
+
+## Table of Contents
+- [Setup](#setup)
+- [Creating a MonoBehaviour Wrapper](#creating-a-monobehaviour-wrapper)
+- [Storing Rule Definitions](#storing-rule-definitions)
+- [Handling NCalc Compatibility](#handling-ncalc-compatibility)
+- [Testing in Unity](#testing-in-unity)
+- [Example Integration](#example-integration)
+
+## Setup
+
+To use this rule engine in a Unity project:
+
+1. Copy the `RuleEngine` folder to your Unity project's `Assets/Scripts` directory
+2. Copy the `Plugins` folder to your Unity project's `Assets` directory (this contains the required NCalc.dll)
+3. Alternatively, you can download NCalc.dll (version 1.3.8) from [NCalc GitHub releases](https://github.com/ncalc/ncalc/releases/tag/1.3.8) if needed
+
+## Creating a MonoBehaviour Wrapper
+
+Create a MonoBehaviour wrapper to use the rule engine in Unity:
+
+```csharp
+using System.Collections.Generic;
+using RuleEngine.Core;
+using UnityEngine;
+
+public class GameRuleEngine : MonoBehaviour
+{
+    private RuleEngine.Core.RuleEngine _ruleEngine;
+
+    private void Awake()
+    {
+        _ruleEngine = new RuleEngine.Core.RuleEngine(new JsonRuleParser());
+        LoadRules();
+    }
+
+    private void LoadRules()
+    {
+        // Load rules from JSON files, PlayerPrefs, or other sources
+        TextAsset ruleAsset = Resources.Load<TextAsset>("Rules/score_bonus");
+        _ruleEngine.AddRule(ruleAsset.text);
+    }
+
+    public Dictionary<string, object> ProcessGameState(Dictionary<string, object> gameState)
+    {
+        return _ruleEngine.ExecuteRules(gameState);
+    }
+}
+```
+
+## Storing Rule Definitions
+
+1. Create a `Resources/Rules` folder in your Unity project
+2. Save your rule JSON definitions as text files in this folder
+3. Access them using `Resources.Load<TextAsset>("Rules/your_rule_name")`
+
+## Handling NCalc Compatibility
+
+NCalc is a .NET Framework library, but it works in Unity with .NET Standard 2.1. However, there are some compatibility considerations:
+
+1. If you encounter any compatibility issues, consider using a Unity-compatible fork of NCalc
+2. For IL2CPP builds, ensure NCalc is included in the [link.xml](https://docs.unity3d.com/Manual/ManagedCodeStripping.html) file to prevent code stripping
+
+Example link.xml file (place in Assets folder):
+```xml
+<linker>
+  <assembly fullname="NCalc" preserve="all"/>
+  <assembly fullname="RuleEngine" preserve="all"/>
+</linker>
+```
+
+## Testing in Unity
+
+1. Create a simple test script that loads and executes rules
+2. Use Unity's Debug.Log to verify rule outputs
+3. Test on both the Editor and target platforms
+
+## Example Integration
+
+Here's an example of using the rule engine in a game context:
+
+```csharp
+public class PlayerController : MonoBehaviour
+{
+    [SerializeField] private GameRuleEngine ruleEngine;
+    
+    private void ApplyGameRules()
+    {
+        // Collect current game state
+        var gameState = new Dictionary<string, object>
+        {
+            { "playerScore", 1500 },
+            { "isPremium", PlayerPrefs.GetInt("premium", 0) == 1 },
+            { "daysPlayed", PlayerPrefs.GetInt("days_played", 0) },
+            { "playerLevel", PlayerStats.CurrentLevel }
+        };
+        
+        // Process rules
+        var results = ruleEngine.ProcessGameState(gameState);
+        
+        // Apply results
+        if (results.TryGetValue("bonus", out var bonus))
+        {
+            ApplyScoreBonus(Convert.ToDouble(bonus));
+        }
+        
+        if (results.TryGetValue("specialOffer", out var offer))
+        {
+            ShowSpecialOffer(offer.ToString());
+        }
+    }
+}
+``` 
