@@ -38,6 +38,8 @@ namespace RuleEngine.Tests
         {
             Console.WriteLine("\nTest 1: Score Bonus Rule");
             Console.WriteLine("------------------------");
+            Console.WriteLine("Description: A simple rule that applies a 1.5x bonus when score exceeds 1000");
+            Console.WriteLine("Rule Type: Simple");
 
             string ruleJson = @"{
                 ""ruleId"": ""score_bonus"",
@@ -57,6 +59,11 @@ namespace RuleEngine.Tests
                 }
             }";
 
+            Console.WriteLine("Rule Definition:");
+            Console.WriteLine("- Condition: score > 1000");
+            Console.WriteLine("- Action: Set bonus = 1.5");
+            Console.WriteLine("\nTest Cases:");
+
             ruleEngine.AddRule(ruleJson);
 
             // Test case 1: Score above threshold
@@ -66,8 +73,8 @@ namespace RuleEngine.Tests
             };
 
             var results1 = ruleEngine.ExecuteRules(inputs1);
-            Console.WriteLine($"Input Score: 1500");
-            Console.WriteLine($"Bonus Applied: {(results1.ContainsKey("bonus") ? results1["bonus"] : "No bonus")}");
+            Console.WriteLine("1. Score = 1500 (above threshold)");
+            Console.WriteLine($"   Result: Bonus Applied = {(results1.ContainsKey("bonus") ? results1["bonus"] : "No bonus")}");
 
             // Test case 2: Score below threshold
             var inputs2 = new Dictionary<string, object>
@@ -76,14 +83,16 @@ namespace RuleEngine.Tests
             };
 
             var results2 = ruleEngine.ExecuteRules(inputs2);
-            Console.WriteLine($"Input Score: 500");
-            Console.WriteLine($"Bonus Applied: {(results2.ContainsKey("bonus") ? results2["bonus"] : "No bonus")}");
+            Console.WriteLine("2. Score = 500 (below threshold)");
+            Console.WriteLine($"   Result: Bonus Applied = {(results2.ContainsKey("bonus") ? results2["bonus"] : "No bonus")}");
         }
 
         static void TestLevelUpRule(Core.RuleEngine ruleEngine)
         {
             Console.WriteLine("\nTest 2: Level Up Rule");
             Console.WriteLine("--------------------");
+            Console.WriteLine("Description: A rule that increases player level and adjusts experience when reaching 1000+ XP");
+            Console.WriteLine("Rule Type: Simple with multiple actions");
 
             string ruleJson = @"{
                 ""ruleId"": ""level_up"",
@@ -107,6 +116,12 @@ namespace RuleEngine.Tests
                 }
             }";
 
+            Console.WriteLine("Rule Definition:");
+            Console.WriteLine("- Condition: experience >= 1000");
+            Console.WriteLine("- Action 1: Set level = 2");
+            Console.WriteLine("- Action 2: Set experience = 500 (remaining after level up)");
+            Console.WriteLine("\nTest Case:");
+
             ruleEngine.AddRule(ruleJson);
 
             var inputs = new Dictionary<string, object>
@@ -116,16 +131,17 @@ namespace RuleEngine.Tests
             };
 
             var results = ruleEngine.ExecuteRules(inputs);
-            Console.WriteLine($"Initial Level: {inputs["level"]}");
-            Console.WriteLine($"Initial Experience: {inputs["experience"]}");
-            Console.WriteLine($"New Level: {(results.ContainsKey("level") ? results["level"] : inputs["level"])}");
-            Console.WriteLine($"Remaining Experience: {(results.ContainsKey("experience") ? results["experience"] : inputs["experience"])}");
+            Console.WriteLine("Initial State: Level = 1, Experience = 1500");
+            Console.WriteLine($"Result: New Level = {(results.ContainsKey("level") ? results["level"] : inputs["level"])}");
+            Console.WriteLine($"        Remaining Experience = {(results.ContainsKey("experience") ? results["experience"] : inputs["experience"])}");
         }
 
         static void TestMultipleConditionsRule(Core.RuleEngine ruleEngine)
         {
             Console.WriteLine("\nTest 3: Multiple Conditions Rule");
             Console.WriteLine("--------------------------------");
+            Console.WriteLine("Description: A rule that requires multiple conditions to be met (AND logic)");
+            Console.WriteLine("Rule Type: Simple with multiple conditions");
 
             string ruleJson = @"{
                 ""ruleId"": ""premium_reward"",
@@ -153,6 +169,13 @@ namespace RuleEngine.Tests
                 }
             }";
 
+            Console.WriteLine("Rule Definition:");
+            Console.WriteLine("- Condition 1: isPremium = true");
+            Console.WriteLine("- Condition 2: daysPlayed >= 7");
+            Console.WriteLine("- Action 1: Set reward = \"Premium Chest\"");
+            Console.WriteLine("- Action 2: Set coins = 1500");
+            Console.WriteLine("\nTest Cases:");
+
             ruleEngine.AddRule(ruleJson);
 
             // Test case 1: Eligible for reward
@@ -164,9 +187,9 @@ namespace RuleEngine.Tests
             };
 
             var results1 = ruleEngine.ExecuteRules(inputs1);
-            Console.WriteLine("Test Case 1 - Eligible:");
-            Console.WriteLine($"Reward: {(results1.ContainsKey("reward") ? results1["reward"] : "No reward")}");
-            Console.WriteLine($"New Coins: {(results1.ContainsKey("coins") ? results1["coins"] : inputs1["coins"])}");
+            Console.WriteLine("1. Premium User with 10 days played (both conditions met)");
+            Console.WriteLine($"   Result: Reward = {(results1.ContainsKey("reward") ? results1["reward"] : "No reward")}");
+            Console.WriteLine($"           Coins = {(results1.ContainsKey("coins") ? results1["coins"] : inputs1["coins"])}");
 
             // Test case 2: Not eligible (not premium)
             var inputs2 = new Dictionary<string, object>
@@ -177,9 +200,9 @@ namespace RuleEngine.Tests
             };
 
             var results2 = ruleEngine.ExecuteRules(inputs2);
-            Console.WriteLine("\nTest Case 2 - Not Eligible (Not Premium):");
-            Console.WriteLine($"Reward: {(results2.ContainsKey("reward") ? results2["reward"] : "No reward")}");
-            Console.WriteLine($"Coins: {inputs2["coins"]}");
+            Console.WriteLine("\n2. Non-Premium User with 10 days played (first condition not met)");
+            Console.WriteLine($"   Result: Reward = {(results2.ContainsKey("reward") ? results2["reward"] : "No reward")}");
+            Console.WriteLine($"           Coins = {inputs2["coins"]} (unchanged)");
 
             // Test case 3: Not eligible (insufficient days)
             var inputs3 = new Dictionary<string, object>
@@ -190,15 +213,17 @@ namespace RuleEngine.Tests
             };
 
             var results3 = ruleEngine.ExecuteRules(inputs3);
-            Console.WriteLine("\nTest Case 3 - Not Eligible (Insufficient Days):");
-            Console.WriteLine($"Reward: {(results3.ContainsKey("reward") ? results3["reward"] : "No reward")}");
-            Console.WriteLine($"Coins: {inputs3["coins"]}");
+            Console.WriteLine("\n3. Premium User with 5 days played (second condition not met)");
+            Console.WriteLine($"   Result: Reward = {(results3.ContainsKey("reward") ? results3["reward"] : "No reward")}");
+            Console.WriteLine($"           Coins = {inputs3["coins"]} (unchanged)");
         }
         
         static void TestExpressionRule(Core.RuleEngine ruleEngine)
         {
             Console.WriteLine("\nTest 4: NCalc Expression Rule");
             Console.WriteLine("----------------------------");
+            Console.WriteLine("Description: A rule that uses NCalc expressions for complex calculations");
+            Console.WriteLine("Rule Type: Expression");
 
             string ruleJson = @"{
                 ""ruleId"": ""damage_calculation"",
@@ -211,6 +236,13 @@ namespace RuleEngine.Tests
                     ""effectiveAttack"": ""attackRoll - defenseRoll""
                 }
             }";
+
+            Console.WriteLine("Rule Definition:");
+            Console.WriteLine("- Condition: attackRoll > defenseRoll");
+            Console.WriteLine("- Action 1: damage = baseDamage * (1 + criticalHit * 0.5) - (defenseValue * 0.2)");
+            Console.WriteLine("- Action 2: isCritical = criticalHit == 1");
+            Console.WriteLine("- Action 3: effectiveAttack = attackRoll - defenseRoll");
+            Console.WriteLine("\nTest Cases:");
 
             ruleEngine.AddRule(ruleJson);
 
@@ -225,14 +257,12 @@ namespace RuleEngine.Tests
             };
 
             var results1 = ruleEngine.ExecuteRules(inputs1);
-            Console.WriteLine("Test Case 1 - Successful Critical Attack:");
-            Console.WriteLine($"Attack Roll: {inputs1["attackRoll"]}");
-            Console.WriteLine($"Defense Roll: {inputs1["defenseRoll"]}");
-            Console.WriteLine($"Base Damage: {inputs1["baseDamage"]}");
-            Console.WriteLine($"Critical Hit: {(inputs1["criticalHit"].Equals(1) ? "Yes" : "No")}");
-            Console.WriteLine($"Damage Dealt: {(results1.ContainsKey("damage") ? results1["damage"] : "No damage")}");
-            Console.WriteLine($"Is Critical: {(results1.ContainsKey("isCritical") ? results1["isCritical"] : "Unknown")}");
-            Console.WriteLine($"Effective Attack: {(results1.ContainsKey("effectiveAttack") ? results1["effectiveAttack"] : "Unknown")}");
+            Console.WriteLine("1. Critical Hit Attack (attackRoll > defenseRoll, criticalHit = 1)");
+            Console.WriteLine($"   Input: Attack Roll = {inputs1["attackRoll"]}, Defense Roll = {inputs1["defenseRoll"]}");
+            Console.WriteLine($"          Base Damage = {inputs1["baseDamage"]}, Defense Value = {inputs1["defenseValue"]}");
+            Console.WriteLine($"   Result: Damage = {(results1.ContainsKey("damage") ? results1["damage"] : "No damage")}");
+            Console.WriteLine($"           Critical = {(results1.ContainsKey("isCritical") ? results1["isCritical"] : "Unknown")}");
+            Console.WriteLine($"           Effective Attack = {(results1.ContainsKey("effectiveAttack") ? results1["effectiveAttack"] : "Unknown")}");
 
             // Test case 2: Failed attack
             var inputs2 = new Dictionary<string, object>
@@ -245,10 +275,9 @@ namespace RuleEngine.Tests
             };
 
             var results2 = ruleEngine.ExecuteRules(inputs2);
-            Console.WriteLine("\nTest Case 2 - Failed Attack:");
-            Console.WriteLine($"Attack Roll: {inputs2["attackRoll"]}");
-            Console.WriteLine($"Defense Roll: {inputs2["defenseRoll"]}");
-            Console.WriteLine($"Damage Dealt: {(results2.ContainsKey("damage") ? results2["damage"] : "No damage")}");
+            Console.WriteLine("\n2. Failed Attack (attackRoll < defenseRoll)");
+            Console.WriteLine($"   Input: Attack Roll = {inputs2["attackRoll"]}, Defense Roll = {inputs2["defenseRoll"]}");
+            Console.WriteLine($"   Result: Damage = {(results2.ContainsKey("damage") ? results2["damage"] : "No damage")} (condition not met)");
             
             // Test case 3: Non-critical hit
             var inputs3 = new Dictionary<string, object>
@@ -261,18 +290,27 @@ namespace RuleEngine.Tests
             };
 
             var results3 = ruleEngine.ExecuteRules(inputs3);
-            Console.WriteLine("\nTest Case 3 - Successful Non-Critical Attack:");
-            Console.WriteLine($"Attack Roll: {inputs3["attackRoll"]}");
-            Console.WriteLine($"Defense Roll: {inputs3["defenseRoll"]}");
-            Console.WriteLine($"Critical Hit: {(inputs3["criticalHit"].Equals(1) ? "Yes" : "No")}");
-            Console.WriteLine($"Damage Dealt: {(results3.ContainsKey("damage") ? results3["damage"] : "No damage")}");
-            Console.WriteLine($"Is Critical: {(results3.ContainsKey("isCritical") ? results3["isCritical"] : "Unknown")}");
+            Console.WriteLine("\n3. Normal Attack (attackRoll > defenseRoll, criticalHit = 0)");
+            Console.WriteLine($"   Input: Attack Roll = {inputs3["attackRoll"]}, Defense Roll = {inputs3["defenseRoll"]}");
+            Console.WriteLine($"          Base Damage = {inputs3["baseDamage"]}, Defense Value = {inputs3["defenseValue"]}");
+            Console.WriteLine($"   Result: Damage = {(results3.ContainsKey("damage") ? results3["damage"] : "No damage")}");
+            Console.WriteLine($"           Critical = {(results3.ContainsKey("isCritical") ? results3["isCritical"] : "Unknown")}");
         }
         
         static void TestCompositeRule(Core.RuleEngine ruleEngine)
         {
             Console.WriteLine("\nTest 5: Composite Rule");
             Console.WriteLine("----------------------");
+            Console.WriteLine("Description: Tests for composite rules with logical operators (AND, OR)");
+            Console.WriteLine("Rule Type: Composite");
+
+            // First composite rule (AND)
+            Console.WriteLine("\nTest 5.1: AND Composite Rule");
+            Console.WriteLine("--------------------------");
+            Console.WriteLine("Rule Definition: Veteran Premium Player Rule (AND operator)");
+            Console.WriteLine("- Child Rule 1: isPremium = true");
+            Console.WriteLine("- Child Rule 2: daysPlayed >= 30");
+            Console.WriteLine("- Action when both conditions met: Set specialReward and gems");
 
             string ruleJson = @"{
                 ""ruleId"": ""veteran_premium_player"",
@@ -327,11 +365,10 @@ namespace RuleEngine.Tests
             };
 
             var results1 = ruleEngine.ExecuteRules(inputs1);
-            Console.WriteLine("Test Case 1 - Veteran Premium Player:");
-            Console.WriteLine($"Premium User: {inputs1["isPremium"]}");
-            Console.WriteLine($"Days Played: {inputs1["daysPlayed"]}");
-            Console.WriteLine($"Special Reward: {(results1.ContainsKey("specialReward") ? results1["specialReward"] : "No reward")}");
-            Console.WriteLine($"Gems: {(results1.ContainsKey("gems") ? results1["gems"] : 0)}");
+            Console.WriteLine("\nTest Case 1 - Veteran Premium Player (both conditions met):");
+            Console.WriteLine($"Input: Premium = {inputs1["isPremium"]}, Days Played = {inputs1["daysPlayed"]}");
+            Console.WriteLine($"Result: Special Reward = {(results1.ContainsKey("specialReward") ? results1["specialReward"] : "No reward")}");
+            Console.WriteLine($"        Gems = {(results1.ContainsKey("gems") ? results1["gems"] : 0)}");
 
             // Test case 2: Premium but not veteran player
             var inputs2 = new Dictionary<string, object>
@@ -341,13 +378,19 @@ namespace RuleEngine.Tests
             };
 
             var results2 = ruleEngine.ExecuteRules(inputs2);
-            Console.WriteLine("\nTest Case 2 - Premium but Not Veteran Player:");
-            Console.WriteLine($"Premium User: {inputs2["isPremium"]}");
-            Console.WriteLine($"Days Played: {inputs2["daysPlayed"]}");
-            Console.WriteLine($"Special Reward: {(results2.ContainsKey("specialReward") ? results2["specialReward"] : "No reward")}");
-            Console.WriteLine($"Gems: {(results2.ContainsKey("gems") ? results2["gems"] : 0)}");
+            Console.WriteLine("\nTest Case 2 - Premium but Not Veteran Player (one condition not met):");
+            Console.WriteLine($"Input: Premium = {inputs2["isPremium"]}, Days Played = {inputs2["daysPlayed"]}");
+            Console.WriteLine($"Result: Special Reward = {(results2.ContainsKey("specialReward") ? results2["specialReward"] : "No reward")}");
+            Console.WriteLine($"        Gems = {(results2.ContainsKey("gems") ? results2["gems"] : 0)}");
 
-            // Test case 3: Or operator composite rule
+            // Second composite rule (OR)
+            Console.WriteLine("\nTest 5.2: OR Composite Rule");
+            Console.WriteLine("-------------------------");
+            Console.WriteLine("Rule Definition: Special Offer Rule (OR operator)");
+            Console.WriteLine("- Child Rule 1: daysPlayed < 7 (new player)");
+            Console.WriteLine("- Child Rule 2: daysSinceLastLogin > 30 (returning player)");
+            Console.WriteLine("- Action when either condition met: Set specialOffer and discount");
+
             string orRuleJson = @"{
                 ""ruleId"": ""special_offer"",
                 ""ruleName"": ""Special Offer Rule"",
@@ -401,11 +444,10 @@ namespace RuleEngine.Tests
             };
 
             var results3 = ruleEngine.ExecuteRules(inputs3);
-            Console.WriteLine("\nTest Case 3 - New Player (OR condition):");
-            Console.WriteLine($"Days Played: {inputs3["daysPlayed"]}");
-            Console.WriteLine($"Days Since Last Login: {inputs3["daysSinceLastLogin"]}");
-            Console.WriteLine($"Special Offer: {(results3.ContainsKey("specialOffer") ? results3["specialOffer"] : "No offer")}");
-            Console.WriteLine($"Discount: {(results3.ContainsKey("discount") ? results3["discount"] : 0)}%");
+            Console.WriteLine("\nTest Case 3 - New Player (first condition met):");
+            Console.WriteLine($"Input: Days Played = {inputs3["daysPlayed"]}, Days Since Last Login = {inputs3["daysSinceLastLogin"]}");
+            Console.WriteLine($"Result: Special Offer = {(results3.ContainsKey("specialOffer") ? results3["specialOffer"] : "No offer")}");
+            Console.WriteLine($"        Discount = {(results3.ContainsKey("discount") ? results3["discount"] : 0)}%");
 
             // Test case 4: Returning player
             var inputs4 = new Dictionary<string, object>
@@ -415,11 +457,10 @@ namespace RuleEngine.Tests
             };
 
             var results4 = ruleEngine.ExecuteRules(inputs4);
-            Console.WriteLine("\nTest Case 4 - Returning Player (OR condition):");
-            Console.WriteLine($"Days Played: {inputs4["daysPlayed"]}");
-            Console.WriteLine($"Days Since Last Login: {inputs4["daysSinceLastLogin"]}");
-            Console.WriteLine($"Special Offer: {(results4.ContainsKey("specialOffer") ? results4["specialOffer"] : "No offer")}");
-            Console.WriteLine($"Discount: {(results4.ContainsKey("discount") ? results4["discount"] : 0)}%");
+            Console.WriteLine("\nTest Case 4 - Returning Player (second condition met):");
+            Console.WriteLine($"Input: Days Played = {inputs4["daysPlayed"]}, Days Since Last Login = {inputs4["daysSinceLastLogin"]}");
+            Console.WriteLine($"Result: Special Offer = {(results4.ContainsKey("specialOffer") ? results4["specialOffer"] : "No offer")}");
+            Console.WriteLine($"        Discount = {(results4.ContainsKey("discount") ? results4["discount"] : 0)}%");
 
             // Test case 5: Regular player (no special offers)
             var inputs5 = new Dictionary<string, object>
@@ -430,10 +471,9 @@ namespace RuleEngine.Tests
 
             var results5 = ruleEngine.ExecuteRules(inputs5);
             Console.WriteLine("\nTest Case 5 - Regular Player (no conditions met):");
-            Console.WriteLine($"Days Played: {inputs5["daysPlayed"]}");
-            Console.WriteLine($"Days Since Last Login: {inputs5["daysSinceLastLogin"]}");
-            Console.WriteLine($"Special Offer: {(results5.ContainsKey("specialOffer") ? results5["specialOffer"] : "No offer")}");
-            Console.WriteLine($"Discount: {(results5.ContainsKey("discount") ? results5["discount"] : 0)}%");
+            Console.WriteLine($"Input: Days Played = {inputs5["daysPlayed"]}, Days Since Last Login = {inputs5["daysSinceLastLogin"]}");
+            Console.WriteLine($"Result: Special Offer = {(results5.ContainsKey("specialOffer") ? results5["specialOffer"] : "No offer")}");
+            Console.WriteLine($"        Discount = {(results5.ContainsKey("discount") ? results5["discount"] : 0)}%");
         }
     }
 } 
