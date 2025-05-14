@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine Visualizer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- D3.js for visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- dagre-d3 for directed graph layout -->
+    <script src="https://cdn.jsdelivr.net/npm/dagre-d3@0.6.4/dist/dagre-d3.min.js"></script>
+    <!-- Monaco Editor for JSON editing -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Rule Engine Visualizer</h1>
+            <div class="controls">
+                <button id="loadSampleBtn">Load Sample Rules</button>
+                <button id="uploadRulesBtn">Upload Rules</button>
+                <input type="file" id="fileInput" accept=".json" style="display: none;">
+            </div>
+        </header>
+        
+        <main>
+            <div class="split-view">
+                <div class="editor-panel">
+                    <h2>Rule Definition</h2>
+                    <div id="jsonEditor"></div>
+                </div>
+                <div class="visualization-panel">
+                    <h2>Rule Visualization</h2>
+                    <div class="toolbar">
+                        <button id="zoomInBtn">Zoom In</button>
+                        <button id="zoomOutBtn">Zoom Out</button>
+                        <button id="resetViewBtn">Reset View</button>
+                        <select id="layoutSelect">
+                            <option value="tb">Top to Bottom</option>
+                            <option value="lr">Left to Right</option>
+                        </select>
+                    </div>
+                    <div id="graphContainer"></div>
+                </div>
+            </div>
+        </main>
+        
+        <div class="rule-details-panel">
+            <div class="rule-details-header">
+                <h3>Rule Details</h3>
+                <button id="backToGraphBtn" class="back-button">← Back to Graph</button>
+            </div>
+            <div id="ruleDetails">
+                <p>Select a rule to view details</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sample rules data -->
+    <script src="js/sampleRules.js"></script>
+    <!-- Visualization logic -->
+    <script src="js/visualizer.js"></script>
+    <!-- Main app logic -->
+    <script src="js/app.js"></script>
+</body>
+</html> 
