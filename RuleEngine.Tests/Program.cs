@@ -12,8 +12,9 @@ namespace RuleEngine.Tests
             Console.WriteLine("Rule Engine Test Program");
             Console.WriteLine("=======================");
 
-            // Create rule engine
-            var ruleEngine = new Core.RuleEngine(new JsonRuleParser());
+            // Create rule engine using the new RuleEngineBuilder pattern
+            var ruleEngineBuilder = new RuleEngineBuilder();
+            var ruleEngine = ruleEngineBuilder.Build();
 
             // Test 1: Simple Score Bonus Rule
             TestScoreBonusRule(ruleEngine);
