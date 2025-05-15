@@ -1,106 +1,129 @@
-# Supported Operators
+# Rule Engine Operators
 
-This document lists all operators supported by the Rule Engine.
+This document explains the operators supported by the Rule Engine and how to validate them.
 
 ## Table of Contents
 - [Condition Operators](#condition-operators)
 - [Action Operators](#action-operators)
+- [Operator Validation](#operator-validation)
+- [Adding Custom Operators](#adding-custom-operators)
 
 ## Condition Operators
 
-These operators are used in rule conditions to evaluate inputs:
+Condition operators are used to compare values in rule conditions. The Rule Engine supports the following condition operators:
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `equals` | Checks if two values are equal | `"score": { "operator": "equals", "value": 100 }` |
-| `notEquals` | Checks if two values are not equal | `"status": { "operator": "notEquals", "value": "inactive" }` |
-| `greaterThan` | Checks if a value is greater than another | `"score": { "operator": "greaterThan", "value": 1000 }` |
-| `lessThan` | Checks if a value is less than another | `"health": { "operator": "lessThan", "value": 50 }` |
-| `greaterThanOrEqual` | Checks if a value is greater than or equal to another | `"level": { "operator": "greaterThanOrEqual", "value": 10 }` |
-| `lessThanOrEqual` | Checks if a value is less than or equal to another | `"energy": { "operator": "lessThanOrEqual", "value": 20 }` |
-| `contains` | Checks if a string contains another string or an array contains a value | `"tags": { "operator": "contains", "value": "premium" }` |
-| `notContains` | Checks if a string does not contain another string or an array does not contain a value | `"inventory": { "operator": "notContains", "value": "key" }` |
+| Operator | Description | Alias | Example |
+|----------|-------------|-------|---------|
+| `equals` | Equality comparison | `==` | `"score": { "operator": "equals", "value": 100 }` |
+| `notequals` | Inequality comparison | `!=` | `"status": { "operator": "notequals", "value": "inactive" }` |
+| `greaterthan` | Greater than comparison | `>` | `"level": { "operator": "greaterthan", "value": 5 }` |
+| `lessthan` | Less than comparison | `<` | `"health": { "operator": "lessthan", "value": 50 }` |
+| `greaterthanorequal` | Greater than or equal comparison | `>=` | `"experience": { "operator": ">=", "value": 1000 }` |
+| `lessthanorequal` | Less than or equal comparison | `<=` | `"energy": { "operator": "<=", "value": 30 }` |
 
 ## Action Operators
 
-These operators are used in rule actions to modify outputs:
+Action operators are used to modify values in rule actions. The Rule Engine supports the following action operators:
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `set` | Sets a value | `"bonus": { "operator": "set", "value": 1.5 }` |
-| `add` | Adds a value to an existing numeric value | `"score": { "operator": "add", "value": 100 }` |
-| `subtract` | Subtracts a value from an existing numeric value | `"health": { "operator": "subtract", "value": 10 }` |
-| `multiply` | Multiplies an existing numeric value by another value | `"damage": { "operator": "multiply", "value": 1.5 }` |
-| `divide` | Divides an existing numeric value by another value | `"cooldown": { "operator": "divide", "value": 2 }` |
-| `append` | Appends a value to an existing string or array | `"message": { "operator": "append", "value": " bonus applied" }` |
-| `remove` | Removes a value from an existing string or array | `"inventory": { "operator": "remove", "value": "used_potion" }` |
+| Operator | Description | Alias | Example |
+|----------|-------------|-------|---------|
+| `set` | Sets a value | `=` | `"bonus": { "operator": "set", "value": 1.5 }` |
+| `add` | Adds a value | `+=` | `"score": { "operator": "add", "value": 100 }` |
+| `subtract` | Subtracts a value | `-=` | `"health": { "operator": "subtract", "value": 10 }` |
+| `multiply` | Multiplies by a value | `*=` | `"damage": { "operator": "multiply", "value": 2 }` |
+| `divide` | Divides by a value | `/=` | `"cooldown": { "operator": "divide", "value": 2 }` |
 
-## Usage Examples
+## Operator Validation
 
-### Condition Operators Example
+The Rule Engine validates operators to ensure they're supported before executing rules. This helps prevent runtime errors.
 
-```json
+Operator validation is performed by the `OperatorRegistry` class, which maintains a list of supported condition and action operators:
+
+```csharp
+public class OperatorRegistry
 {
-    "ruleId": "veteran_player_bonus",
-    "ruleName": "Veteran Player Bonus",
-    "type": "simple",
-    "conditions": {
-        "daysPlayed": {
-            "operator": "greaterThanOrEqual",
-            "value": 30
-        },
-        "accountStatus": {
-            "operator": "equals",
-            "value": "active"
-        },
-        "badges": {
-            "operator": "contains",
-            "value": "loyal_player"
-        }
-    },
-    "actions": {
-        "dailyReward": {
-            "operator": "multiply",
-            "value": 2
-        },
-        "message": {
-            "operator": "set",
-            "value": "Thank you for being a loyal player!"
-        }
+    private readonly HashSet<string> _conditionOperators;
+    private readonly HashSet<string> _actionOperators;
+    
+    public OperatorRegistry()
+    {
+        // Register standard condition operators
+        RegisterConditionOperators("equals", "==", "notequals", "!=", 
+            "greaterthan", ">", "lessthan", "<", 
+            "greaterthanorequal", ">=", "lessthanorequal", "<=");
+            
+        // Register standard action operators
+        RegisterActionOperators("set", "=", "add", "+=", "subtract", "-=",
+            "multiply", "*=", "divide", "/=");
     }
+    
+    // Methods for registering and validating operators
+    // ...
 }
 ```
 
-### Action Operators Example
+## Adding Custom Operators
 
-```json
+You can add custom operators to support your specific needs:
+
+```csharp
+// Create a rule engine builder
+var builder = new RuleEngineBuilder();
+
+// Register custom condition operators
+builder.RegisterConditionOperators("contains", "startsWith", "endsWith");
+
+// Register custom action operators
+builder.RegisterActionOperators("append", "prepend");
+
+// Build the rule engine
+var ruleEngine = builder.Build();
+```
+
+### Implementing Custom Operators
+
+To implement custom operators, you need to create a custom rule factory that handles the custom operators:
+
+```csharp
+public class CustomRuleFactory : IRuleFactory
 {
-    "ruleId": "level_up_rewards",
-    "ruleName": "Level Up Rewards",
-    "type": "simple",
-    "conditions": {
-        "leveledUp": {
-            "operator": "equals",
-            "value": true
-        }
-    },
-    "actions": {
-        "coins": {
-            "operator": "add",
-            "value": 500
-        },
-        "energy": {
-            "operator": "set",
-            "value": 100
-        },
-        "cooldowns": {
-            "operator": "divide",
-            "value": 2
-        },
-        "playerTitle": {
-            "operator": "append",
-            "value": " the Experienced"
-        }
+    private readonly OperatorRegistry _operatorRegistry;
+    
+    public CustomRuleFactory(OperatorRegistry operatorRegistry)
+    {
+        _operatorRegistry = operatorRegistry;
+        
+        // Register custom operators
+        _operatorRegistry.RegisterConditionOperators("contains", "startsWith", "endsWith");
+        _operatorRegistry.RegisterActionOperators("append", "prepend");
     }
-}
-``` 
+    
+    public string RuleType => "custom";
+    
+    public IRule Create(RuleDefinition ruleData)
+    {
+        // Validation and creation logic
+        // ...
+        
+        // Create condition evaluator with custom operators
+        Func<IDictionary<string, object>, bool> conditionEvaluator = inputs =>
+        {
+            // Implement custom operator logic
+            // ...
+        };
+        
+        // Create action executor with custom operators
+        Func<IDictionary<string, object>, IDictionary<string, object>> actionExecutor = inputs =>
+        {
+            // Implement custom operator logic
+            // ...
+        };
+        
+        return new CustomRule(
+            ruleData.RuleId,
+            ruleData.RuleName,
+            conditionEvaluator,
+            actionExecutor
+        );
+    }
+} 

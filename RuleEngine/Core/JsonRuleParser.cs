@@ -9,6 +9,22 @@ namespace RuleEngine.Core
 {
     public class JsonRuleParser : IRuleParser
     {
+        private readonly RuleFactoryRegistry _factoryRegistry;
+        
+        /// <summary>
+        /// Creates a new JSON rule parser
+        /// </summary>
+        /// <param name="factoryRegistry">The rule factory registry</param>
+        public JsonRuleParser(RuleFactoryRegistry factoryRegistry)
+        {
+            _factoryRegistry = factoryRegistry ?? throw new ArgumentNullException(nameof(factoryRegistry));
+        }
+        
+        /// <summary>
+        /// Parses a rule definition from JSON
+        /// </summary>
+        /// <param name="ruleDefinition">The JSON rule definition</param>
+        /// <returns>An instantiated rule</returns>
         public IRule Parse(string ruleDefinition)
         {
             try
@@ -25,17 +41,14 @@ namespace RuleEngine.Core
                     throw new ArgumentException("RuleId and RuleName are required");
                 }
 
-                switch (ruleData.Type?.ToLower())
-                {
-                    case "simple":
-                        return CreateSimpleRule(ruleData);
-                    case "expression":
-                        return CreateExpressionRule(ruleData);
-                    case "composite":
-                        return CreateCompositeRule(ruleData);
-                    default:
-                        throw new ArgumentException($"Unsupported rule type: {ruleData.Type}");
-                }
+                // Default to simple rule if type is not specified
+                string ruleType = ruleData.Type?.ToLower() ?? "simple";
+                
+                // Get the appropriate factory for this rule type
+                var factory = _factoryRegistry.GetFactory(ruleType);
+                
+                // Create the rule using the factory
+                return factory.Create(ruleData);
             }
             catch (JsonException ex)
             {

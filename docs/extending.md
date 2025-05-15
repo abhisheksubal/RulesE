@@ -4,8 +4,9 @@ This document explains how to extend the Rule Engine with custom rule types.
 
 ## Table of Contents
 - [Creating a New Rule Class](#creating-a-new-rule-class)
+- [Creating a Rule Factory](#creating-a-rule-factory)
+- [Registering the Factory](#registering-the-factory)
 - [Updating the Rule Definition Model](#updating-the-rule-definition-model)
-- [Extending the JsonRuleParser](#extending-the-jsonruleparser)
 - [Documenting the New Rule Type](#documenting-the-new-rule-type)
 - [Creating Tests](#creating-tests)
 - [Example: Time-Based Rule](#example-time-based-rule)
@@ -69,6 +70,62 @@ namespace RuleEngine.Rules
 }
 ```
 
+## Creating a Rule Factory
+
+1. Create a factory class in the `RuleEngine/Rules/Factories` directory that implements the `IRuleFactory` interface:
+
+```csharp
+using System;
+using RuleEngine.Core;
+using RuleEngine.Models;
+
+namespace RuleEngine.Rules.Factories
+{
+    public class CustomRuleFactory : IRuleFactory
+    {
+        // Define the rule type this factory handles
+        public string RuleType => "custom";
+        
+        // Create a rule instance from rule definition data
+        public IRule Create(RuleDefinition ruleData)
+        {
+            if (ruleData == null)
+                throw new ArgumentNullException(nameof(ruleData));
+                
+            if (string.IsNullOrEmpty(ruleData.RuleId))
+                throw new ArgumentException("RuleId is required for CustomRule");
+                
+            if (string.IsNullOrEmpty(ruleData.RuleName))
+                throw new ArgumentException("RuleName is required for CustomRule");
+                
+            if (string.IsNullOrEmpty(ruleData.CustomProperty))
+                throw new ArgumentException("CustomProperty is required for CustomRule");
+                
+            return new CustomRule(
+                ruleData.RuleId,
+                ruleData.RuleName,
+                ruleData.CustomProperty
+            );
+        }
+    }
+}
+```
+
+## Registering the Factory
+
+1. Register your factory with the `RuleFactoryRegistry` using the `RuleEngineBuilder`:
+
+```csharp
+// Create a rule engine builder
+var builder = new RuleEngineBuilder();
+
+// Register your custom rule factory
+builder.RegisterFactory(new CustomRuleFactory());
+
+// Build the rule engine
+var ruleEngine = builder.Build();
+```
+
 ## Updating the Rule Definition Model
 
 1. Add new properties to the `RuleDefinition` class in `RuleEngine/Models/RuleDefinition.cs` to support your custom rule type:
@@ -77,45 +134,6 @@ namespace RuleEngine.Rules
 // For custom rule
 [JsonProperty("customProperty")]
 public string? CustomProperty { get; set; }
-```
-
-## Extending the JsonRuleParser
-
-1. Modify the `JsonRuleParser.cs` file to handle the new rule type:
-   - Add a new case to the switch statement in the `Parse` method:
-   
-```csharp
-switch (ruleData.Type?.ToLower())
-{
-    case "simple":
-        return CreateSimpleRule(ruleData);
-    case "expression":
-        return CreateExpressionRule(ruleData);
-    case "composite":
-        return CreateCompositeRule(ruleData);
-    case "custom": // Your custom rule type
-        return CreateCustomRule(ruleData);
-    default:
-        throw new ArgumentException($"Unsupported rule type: {ruleData.Type}");
-}
-```
-
-2. Create a method to instantiate your custom rule:
-
-```csharp
-private IRule CreateCustomRule(RuleDefinition ruleData)
-{
-    if (string.IsNullOrEmpty(ruleData.CustomProperty))
-    {
-        throw new ArgumentException("CustomProperty is required for CustomRule");
-    }
-
-    return new CustomRule(
-        ruleData.RuleId!,
-        ruleData.RuleName!,
-        ruleData.CustomProperty
-    );
-}
 ```
 
 ## Documenting the New Rule Type
@@ -145,6 +163,8 @@ private IRule CreateCustomRule(RuleDefinition ruleData)
 ## Example: Time-Based Rule
 
 Here's an example of a time-based rule that evaluates based on the current time:
+
+### Rule Class
 
 ```csharp
 public class TimeBasedRule : RuleBase
@@ -192,6 +212,63 @@ public class TimeBasedRule : RuleBase
         }
     }
 }
+```
+
+### Rule Factory
+
+```csharp
+public class TimeBasedRuleFactory : IRuleFactory
+{
+    public string RuleType => "timeBasedRule";
+    
+    public IRule Create(RuleDefinition ruleData)
+    {
+        if (ruleData == null)
+            throw new ArgumentNullException(nameof(ruleData));
+            
+        if (string.IsNullOrEmpty(ruleData.RuleId))
+            throw new ArgumentException("RuleId is required for TimeBasedRule");
+            
+        if (string.IsNullOrEmpty(ruleData.RuleName))
+            throw new ArgumentException("RuleName is required for TimeBasedRule");
+            
+        // Parse start and end times
+        if (!TimeSpan.TryParse(ruleData.StartTime, out var startTime))
+            throw new ArgumentException("Invalid StartTime format");
+            
+        if (!TimeSpan.TryParse(ruleData.EndTime, out var endTime))
+            throw new ArgumentException("Invalid EndTime format");
+            
+        // Extract actions
+        var actions = new Dictionary<string, object>();
+        if (ruleData.Actions != null)
+        {
+            foreach (var action in ruleData.Actions)
+            {
+                actions[action.Key] = action.Value.Value;
+            }
+        }
+        
+        return new TimeBasedRule(
+            ruleData.RuleId,
+            ruleData.RuleName,
+            startTime,
+            endTime,
+            actions
+        );
+    }
+}
+```
+
+### Model Updates
+
+```csharp
+// For time-based rule
+[JsonProperty("startTime")]
+public string? StartTime { get; set; }
+
+[JsonProperty("endTime")]
+public string? EndTime { get; set; }
 ```
 
 ### JSON Definition for Time-Based Rule

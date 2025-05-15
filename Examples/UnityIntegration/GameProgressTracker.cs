@@ -17,6 +17,7 @@ namespace Examples.UnityIntegration
         private RuleEngine.Core.RuleEngine _ruleEngine;
         private GameState _gameState;
         private RewardHandler _rewardHandler;
+        private RuleValidator _ruleValidator;
         
         // Singleton instance
         private static GameProgressTracker _instance;
@@ -53,8 +54,14 @@ namespace Examples.UnityIntegration
 
         private void InitializeRuleEngine()
         {
-            var ruleParser = new JsonRuleParser();
-            _ruleEngine = new RuleEngine.Core.RuleEngine(ruleParser);
+            // Create a rule engine builder with default configuration
+            var builder = new RuleEngineBuilder();
+            
+            // Get the validator for rule validation
+            _ruleValidator = builder.GetValidator();
+            
+            // Build the rule engine
+            _ruleEngine = builder.Build();
             
             // Load rules from the single JSON file
             if (rulesFile != null)
@@ -68,8 +75,18 @@ namespace Examples.UnityIntegration
                     foreach (var rule in rules)
                     {
                         string ruleJson = JsonConvert.SerializeObject(rule);
-                        _ruleEngine.AddRule(ruleJson);
-                        Debug.Log($"Loaded rule from rules file");
+                        
+                        // Validate the rule before adding it
+                        List<string> errors;
+                        if (_ruleValidator.Validate(ruleJson, out errors))
+                        {
+                            _ruleEngine.AddRule(ruleJson);
+                            Debug.Log($"Loaded rule from rules file");
+                        }
+                        else
+                        {
+                            Debug.LogError($"Invalid rule: {string.Join(", ", errors)}");
+                        }
                     }
                     
                     Debug.Log($"Successfully loaded {rules.Count} rules from {rulesFile.name}");

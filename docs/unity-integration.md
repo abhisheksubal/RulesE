@@ -6,6 +6,7 @@ This document explains how to integrate the Rule Engine into a Unity project.
 - [Setup](#setup)
 - [Creating a MonoBehaviour Wrapper](#creating-a-monobehaviour-wrapper)
 - [Storing Rule Definitions](#storing-rule-definitions)
+- [Validating Rules](#validating-rules)
 - [Handling NCalc Compatibility](#handling-ncalc-compatibility)
 - [Testing in Unity](#testing-in-unity)
 - [Example Integration](#example-integration)
@@ -30,10 +31,20 @@ using UnityEngine;
 public class GameRuleEngine : MonoBehaviour
 {
     private RuleEngine.Core.RuleEngine _ruleEngine;
+    private RuleValidator _ruleValidator;
 
     private void Awake()
     {
-        _ruleEngine = new RuleEngine.Core.RuleEngine(new JsonRuleParser());
+        // Create a rule engine builder with default configuration
+        var builder = new RuleEngineBuilder();
+        
+        // Get the validator for rule validation
+        _ruleValidator = builder.GetValidator();
+        
+        // Build the rule engine
+        _ruleEngine = builder.Build();
+        
+        // Load rules
         LoadRules();
     }
 
@@ -41,7 +52,18 @@ public class GameRuleEngine : MonoBehaviour
     {
         // Load rules from JSON files, PlayerPrefs, or other sources
         TextAsset ruleAsset = Resources.Load<TextAsset>("Rules/score_bonus");
-        _ruleEngine.AddRule(ruleAsset.text);
+        
+        // Validate the rule before adding it
+        List<string> errors;
+        if (_ruleValidator.Validate(ruleAsset.text, out errors))
+        {
+            _ruleEngine.AddRule(ruleAsset.text);
+            Debug.Log($"Loaded rule: {ruleAsset.name}");
+        }
+        else
+        {
+            Debug.LogError($"Invalid rule {ruleAsset.name}: {string.Join(", ", errors)}");
+        }
     }
 
     public Dictionary<string, object> ProcessGameState(Dictionary<string, object> gameState)
@@ -56,6 +78,26 @@ public class GameRuleEngine : MonoBehaviour
 1. Create a `Resources/Rules` folder in your Unity project
 2. Save your rule JSON definitions as text files in this folder
 3. Access them using `Resources.Load<TextAsset>("Rules/your_rule_name")`
+
+## Validating Rules
+
+It's important to validate rules before adding them to the engine, especially in a game environment where invalid rules could cause runtime errors:
+
+```csharp
+private void ValidateAndAddRule(string ruleJson)
+{
+    List<string> errors;
+    if (_ruleValidator.Validate(ruleJson, out errors))
+    {
+        _ruleEngine.AddRule(ruleJson);
+        Debug.Log("Rule added successfully");
+    }
+    else
+    {
+        Debug.LogError($"Invalid rule: {string.Join(", ", errors)}");
+    }
+}
+```
 
 ## Handling NCalc Compatibility
 
@@ -113,4 +155,24 @@ public class PlayerController : MonoBehaviour
         }
     }
 }
+```
+
+### Advanced Configuration
+
+You can customize the rule engine for your game's specific needs:
+
+```csharp
+// Create a rule engine with custom configuration
+var builder = new RuleEngineBuilder()
+    // Register game-specific condition operators
+    .RegisterConditionOperators("hasItem", "hasQuest", "hasAchievement")
+    
+    // Register game-specific action operators
+    .RegisterActionOperators("giveItem", "removeItem", "triggerEvent")
+    
+    // Register a custom rule factory for game-specific rules
+    .RegisterFactory(new QuestRuleFactory());
+
+// Build the rule engine
+_ruleEngine = builder.Build();
 ``` 
