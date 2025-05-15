@@ -1,5 +1,26 @@
 [
   {
+    "ruleId": "default-count-handler",
+    "ruleName": "Default Count Handler",
+    "type": "simple",
+    "conditions": {
+      "LastEventName": {
+        "operator": "==",
+        "value": "collect_item"
+      },
+      "Event_count": {
+        "operator": "==",
+        "value": null
+      }
+    },
+    "actions": {
+      "Event_count": {
+        "operator": "=",
+        "value": 1
+      }
+    }
+  },
+  {
     "ruleId": "collect-blue-piece",
     "ruleName": "Blue Piece Collection",
     "type": "simple",
@@ -46,27 +67,6 @@
       "LastCollectedItemType": {
         "operator": "=",
         "value": "Event_item_type"
-      }
-    }
-  },
-  {
-    "ruleId": "default-count-handler",
-    "ruleName": "Default Count Handler",
-    "type": "simple",
-    "conditions": {
-      "LastEventName": {
-        "operator": "==",
-        "value": "collect_item"
-      },
-      "Event_count": {
-        "operator": "==",
-        "value": null
-      }
-    },
-    "actions": {
-      "Event_count": {
-        "operator": "=",
-        "value": 1
       }
     }
   },
