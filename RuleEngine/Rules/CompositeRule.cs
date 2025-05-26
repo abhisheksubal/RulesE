@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RuleEngine.Core;
+using RuleEngine.Models;
 
 namespace RuleEngine.Rules
 {
@@ -153,12 +154,5 @@ namespace RuleEngine.Rules
             }
             throw new ArgumentException("Divide operation requires numeric values");
         }
-    }
-    
-    // Action definition class to support composite rules
-    public class ActionDefinition
-    {
-        public string? Operator { get; set; }
-        public object? Value { get; set; }
     }
 } 

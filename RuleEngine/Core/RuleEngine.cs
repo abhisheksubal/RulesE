@@ -7,16 +7,25 @@ namespace RuleEngine.Core
     {
         private readonly List<IRule> _rules;
         private readonly IRuleParser _ruleParser;
+        private readonly OperatorRegistry _operatorRegistry;
+        private readonly RuleFactoryRegistry _ruleFactoryRegistry;
 
-        public RuleEngine(IRuleParser ruleParser)
+        public RuleEngine(OperatorRegistry operatorRegistry, RuleFactoryRegistry ruleFactoryRegistry, IRuleParser? ruleParser = null)
         {
             _rules = new List<IRule>();
-            _ruleParser = ruleParser;
+            _operatorRegistry = operatorRegistry;
+            _ruleFactoryRegistry = ruleFactoryRegistry;
+            _ruleParser = ruleParser ?? new JsonRuleParser(operatorRegistry, ruleFactoryRegistry);
         }
 
         public void AddRule(string ruleDefinition)
         {
             var rule = _ruleParser.Parse(ruleDefinition);
+            _rules.Add(rule);
+        }
+
+        public void AddRule(IRule rule)
+        {
             _rules.Add(rule);
         }
 
