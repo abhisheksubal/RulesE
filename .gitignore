@@ -6,6 +6,9 @@ obj/
 *.userosscache
 *.sln.docstates
 
+# Project specific
+Examples/
+
 # Visual Studio files
 .vs/
 .vscode/
