@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using RuleEngine.Models;
 
 namespace RuleEngine.Core
 {
@@ -51,24 +50,6 @@ namespace RuleEngine.Core
                 return false;
                 
             return _factories.ContainsKey(ruleType.ToLower());
-        }
-
-        /// <summary>
-        /// Creates a rule from a rule definition
-        /// </summary>
-        /// <param name="ruleDefinition">The rule definition</param>
-        /// <returns>The created rule</returns>
-        /// <exception cref="ArgumentException">Thrown when the rule type is not supported</exception>
-        public IRule CreateRule(RuleDefinition ruleDefinition)
-        {
-            if (ruleDefinition == null)
-                throw new ArgumentNullException(nameof(ruleDefinition));
-
-            if (string.IsNullOrEmpty(ruleDefinition.Type))
-                throw new ArgumentException("Rule type is required", nameof(ruleDefinition));
-
-            var factory = GetFactory(ruleDefinition.Type);
-            return factory.Create(ruleDefinition);
         }
     }
 } 
