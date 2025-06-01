@@ -64,8 +64,8 @@ namespace RuleEngine.Core
             }
 
             return new SimpleRule(
-                ruleData.RuleId!,
-                ruleData.RuleName!,
+                ruleData.RuleId,
+                ruleData.RuleName,
                 CreateConditionEvaluator(ruleData.Conditions),
                 CreateActionExecutor(ruleData.Actions)
             );
@@ -79,8 +79,8 @@ namespace RuleEngine.Core
             }
 
             return new ExpressionRule(
-                ruleData.RuleId!,
-                ruleData.RuleName!,
+                ruleData.RuleId,
+                ruleData.RuleName,
                 ruleData.ConditionExpression,
                 ruleData.ActionExpressions
             );
@@ -111,7 +111,7 @@ namespace RuleEngine.Core
             }
 
             // Convert actions to ActionDefinition objects
-            IDictionary<string, Rules.ActionDefinition>? compositeActions = null;
+            IDictionary<string, Rules.ActionDefinition> compositeActions = null;
             if (ruleData.Actions != null && ruleData.Actions.Count > 0)
             {
                 compositeActions = new Dictionary<string, Rules.ActionDefinition>();
@@ -126,8 +126,8 @@ namespace RuleEngine.Core
             }
 
             return new CompositeRule(
-                ruleData.RuleId!,
-                ruleData.RuleName!,
+                ruleData.RuleId,
+                ruleData.RuleName,
                 logicalOperator,
                 childRules,
                 compositeActions
@@ -180,7 +180,7 @@ namespace RuleEngine.Core
             }
         }
 
-        private int CompareValues(object? value1, object? value2)
+        private int CompareValues(object value1, object value2)
         {
             try
             {
@@ -227,7 +227,7 @@ namespace RuleEngine.Core
             switch (action.Operator?.ToLower())
             {
                 case "set":
-                    return action.Value!;
+                    return action.Value;
                 case "add":
                     return AddValues(inputs, actionKey, action);
                 case "subtract":

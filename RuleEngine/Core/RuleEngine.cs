@@ -27,7 +27,8 @@ namespace RuleEngine.Core
 
         public IDictionary<string, object> ExecuteRules(IDictionary<string, object> inputs)
         {
-            var results = new Dictionary<string, object>();
+            // Initialize results with a copy of the input values
+            var results = new Dictionary<string, object>(inputs);
             
             foreach (var rule in _rules)
             {
