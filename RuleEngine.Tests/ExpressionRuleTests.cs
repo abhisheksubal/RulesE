@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
+
 using NUnit.Framework;
 using RuleEngine.Core;
-using RuleEngine.Rules;
 using RuleEngine.Rules.Factories;
-using Newtonsoft.Json;
 
 namespace RuleEngine.Tests
 {
