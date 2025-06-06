@@ -22,11 +22,35 @@ namespace RuleEngine.Rules
             _actionExpressions = actionExpressions ?? throw new ArgumentNullException(nameof(actionExpressions));
         }
 
+        private Expression CreateExpression(string expression)
+        {
+            var expr = new Expression(expression);
+            expr.EvaluateFunction += (name, args) =>
+            {
+                Console.WriteLine($"Function: {name}, Parameters: {string.Join(", ", args.Parameters.Select(p => p == null ? "null" : p.ToString()))}");
+                if (name.ToLower() == "isnull")
+                {
+                    var evaluatedValue = args.Parameters[0].Evaluate();
+                    Console.WriteLine($"Evaluated value for IsNull: {evaluatedValue}");
+                }
+                switch (name.ToLower())
+                {
+                    case "isnull":
+                        args.Result = args.Parameters[0] == null || object.Equals(args.Parameters[0], DBNull.Value) || string.IsNullOrEmpty(args.Parameters[0].ToString());
+                        break;
+                    case "nvl":
+                        args.Result = (args.Parameters[0] == null || object.Equals(args.Parameters[0], DBNull.Value) || string.IsNullOrEmpty(args.Parameters[0].ToString())) ? args.Parameters[1] : args.Parameters[0];
+                        break;
+                }
+            };
+            return expr;
+        }
+
         public override bool Evaluate(IDictionary<string, object> inputs)
         {
             try
             {
-                Expression expression = new Expression(_conditionExpression);
+                var expression = CreateExpression(_conditionExpression);
 
                 // Set parameters from inputs
                 foreach (var input in inputs)
@@ -75,7 +99,7 @@ namespace RuleEngine.Rules
                         continue;
                     }
 
-                    var expression = new Expression(actionExpr.Value);
+                    var expression = CreateExpression(actionExpr.Value);
 
                     // Set parameters from inputs
                     foreach (var input in inputs)
