@@ -127,6 +127,51 @@ Expression rules use NCalc expressions for more complex calculations and conditi
 }
 ```
 
+### Callback Support
+
+Expression rules support callbacks using either the `=>` operator or the `callback()` function in action expressions. Callbacks are useful for triggering events or notifications without modifying data.
+
+```json
+{
+    "ruleId": "event_notification",
+    "ruleName": "Event Notification Rule",
+    "type": "expression",
+    "conditionExpression": "eventType == 'spin_gained'",
+    "actionExpressions": {
+        "notify": "=> spin_collected",
+        "alert": "callback(spin_collected)"
+    }
+}
+```
+
+When a callback action is executed:
+1. The callback is stored in a special `__callbacks__` list in the results
+2. Each callback contains a `name` and `value`
+3. The callback value is extracted from either:
+   - The text after the `=>` operator
+   - The text inside the `callback()` function
+4. No data mutation occurs for callback actions
+
+Example usage:
+```csharp
+var inputs = new Dictionary<string, object>
+{
+    { "eventType", "spin_gained" }
+};
+
+var results = ruleEngine.ExecuteRules(inputs);
+
+// Access callbacks
+if (results.ContainsKey("__callbacks__"))
+{
+    var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+    foreach (var callback in callbacks)
+    {
+        Console.WriteLine($"Callback: {callback["name"]} => {callback["value"]}");
+    }
+}
+```
+
 ## Composite Rules
 
 Composite rules allow you to combine multiple rules using logical operators (AND, OR, NOT).

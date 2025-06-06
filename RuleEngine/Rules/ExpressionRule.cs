@@ -54,6 +54,27 @@ namespace RuleEngine.Rules
             {
                 foreach (var actionExpr in _actionExpressions)
                 {
+                    // Check if this is a callback action
+                    if (IsCallbackAction(actionExpr.Value, out string callbackValue))
+                    {
+                        // Handle callback
+                        if (!inputs.ContainsKey("__callbacks__"))
+                        {
+                            inputs["__callbacks__"] = new List<Dictionary<string, object>>();
+                        }
+
+                        var callbacks = (List<Dictionary<string, object>>)inputs["__callbacks__"];
+                        callbacks.Add(new Dictionary<string, object>
+                        {
+                            { "name", actionExpr.Key },
+                            { "value", callbackValue }
+                        });
+
+                        // Copy callbacks to results
+                        results["__callbacks__"] = callbacks;
+                        continue;
+                    }
+
                     var expression = new Expression(actionExpr.Value);
 
                     // Set parameters from inputs
@@ -74,6 +95,12 @@ namespace RuleEngine.Rules
                     // Add result to output
                     results[actionExpr.Key] = actionResult;
                 }
+
+                // Copy __callbacks__ from inputs to results if it exists
+                if (inputs.ContainsKey("__callbacks__"))
+                {
+                    results["__callbacks__"] = inputs["__callbacks__"];
+                }
             }
             catch (Exception ex)
             {
@@ -81,6 +108,27 @@ namespace RuleEngine.Rules
             }
 
             return results;
+        }
+
+        private bool IsCallbackAction(string actionValue, out string callbackValue)
+        {
+            callbackValue = null;
+
+            // Check for => operator
+            if (actionValue.StartsWith("=>"))
+            {
+                callbackValue = actionValue.Substring(2).Trim();
+                return true;
+            }
+
+            // Check for callback operator
+            if (actionValue.StartsWith("callback(") && actionValue.EndsWith(")"))
+            {
+                callbackValue = actionValue.Substring(9, actionValue.Length - 10).Trim();
+                return true;
+            }
+
+            return false;
         }
     }
 } 

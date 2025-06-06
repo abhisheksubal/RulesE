@@ -89,6 +89,74 @@ namespace RuleEngine.Tests
         }
 
         [Test]
+        public void TestExpressionRuleCallback()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""expression_callback_rule"",
+                ""ruleName"": ""Expression Callback Rule"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""eventType == 'spin_gained'"",
+                ""actionExpressions"": {
+                    ""notify"": ""=> spin_collected""
+                }
+            }";
+
+            _engine.AddRule(ruleJson);
+
+            // Act
+            var inputs = new Dictionary<string, object>
+            {
+                { "eventType", "spin_gained" }
+            };
+            var results = _engine.ExecuteRules(inputs);
+
+            // Assert
+            Assert.That(results.ContainsKey("__callbacks__"), Is.True);
+            var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+            Assert.That(callbacks, Is.Not.Null);
+            Assert.That(callbacks.Count, Is.EqualTo(1));
+            Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
+            Assert.That(callbacks[0]["value"], Is.EqualTo("spin_collected"));
+            // No data mutation for callback
+            Assert.That(results.ContainsKey("notify"), Is.False);
+        }
+
+        [Test]
+        public void TestExpressionRuleCallbackWithFullOperator()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""expression_callback_rule_full"",
+                ""ruleName"": ""Expression Callback Rule with Full Operator"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""eventType == 'spin_gained'"",
+                ""actionExpressions"": {
+                    ""notify"": ""callback(spin_collected)""
+                }
+            }";
+
+            _engine.AddRule(ruleJson);
+
+            // Act
+            var inputs = new Dictionary<string, object>
+            {
+                { "eventType", "spin_gained" }
+            };
+            var results = _engine.ExecuteRules(inputs);
+
+            // Assert
+            Assert.That(results.ContainsKey("__callbacks__"), Is.True);
+            var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+            Assert.That(callbacks, Is.Not.Null);
+            Assert.That(callbacks.Count, Is.EqualTo(1));
+            Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
+            Assert.That(callbacks[0]["value"], Is.EqualTo("spin_collected"));
+            // No data mutation for callback
+            Assert.That(results.ContainsKey("notify"), Is.False);
+        }
+
+        [Test]
         public void TestCompositeRule_And()
         {
             // Arrange

@@ -32,6 +32,11 @@ Action operators are used to modify values in rule actions. The Rule Engine supp
 | `subtract` | Subtracts a value | `-=` | `"health": { "operator": "subtract", "value": 10 }` |
 | `multiply` | Multiplies by a value | `*=` | `"damage": { "operator": "multiply", "value": 2 }` |
 | `divide` | Divides by a value | `/=` | `"cooldown": { "operator": "divide", "value": 2 }` |
+| `callback` | Triggers a callback event | `=>` | `"notify": { "operator": "callback", "value": "spin_collected" }` |
+
+Note: For callbacks, both SimpleRules and ExpressionRules support:
+- The `=>` operator syntax (e.g., `=> spin_collected`)
+- The `callback()` function syntax (e.g., `callback(spin_collected)`)
 
 ## Operator Validation
 
