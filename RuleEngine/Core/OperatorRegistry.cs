@@ -23,7 +23,7 @@ namespace RuleEngine.Core
                 
             // Register standard action operators
             RegisterActionOperators("set", "=", "add", "+=", "subtract", "-=",
-                "multiply", "*=", "divide", "/=");
+                "multiply", "*=", "divide", "/=", "callback", "=>");
         }
         
         /// <summary>
@@ -98,6 +98,12 @@ namespace RuleEngine.Core
             string[] operators = new string[_actionOperators.Count];
             _actionOperators.CopyTo(operators);
             return operators;
+        }
+
+        public bool IsActionOperator(string? op)
+        {
+            if (string.IsNullOrEmpty(op)) return false;
+            return _actionOperators.Contains(op.ToLower());
         }
     }
 } 

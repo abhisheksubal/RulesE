@@ -177,12 +177,22 @@ namespace RuleEngine.Rules.Factories
             {
                 try
                 {
-                    results[action.Key] = ExecuteAction(inputs, action.Key, action.Value);
+                    var result = ExecuteAction(inputs, action.Key, action.Value);
+                    if (result != null)
+                    {
+                        results[action.Key] = result;
+                    }
                 }
                 catch (Exception ex)
                 {
                     throw new InvalidOperationException($"Error executing action '{action.Key}': {ex.Message}", ex);
                 }
+            }
+            
+            // Copy __callbacks__ from inputs to results if it exists
+            if (inputs.ContainsKey("__callbacks__"))
+            {
+                results["__callbacks__"] = inputs["__callbacks__"];
             }
             
             return results;
@@ -200,6 +210,7 @@ namespace RuleEngine.Rules.Factories
                 case "-=": op = "subtract"; break;
                 case "*=": op = "multiply"; break;
                 case "/=": op = "divide"; break;
+                case "=>": op = "callback"; break;
             }
             
             // Handle value references (if action.Value is a string that refers to another input)
@@ -221,9 +232,34 @@ namespace RuleEngine.Rules.Factories
                     return MultiplyValues(inputs, actionKey, actionValue);
                 case "divide":
                     return DivideValues(inputs, actionKey, actionValue);
+                case "callback":
+                    return HandleCallback(inputs, actionKey, actionValue);
                 default:
                     throw new ArgumentException($"Unsupported action operator: {action.Operator}");
             }
+        }
+        
+        private object HandleCallback(IDictionary<string, object> inputs, string actionKey, object actionValue)
+        {
+            // Add the callback to the results dictionary
+            if (!inputs.ContainsKey("__callbacks__"))
+            {
+                inputs["__callbacks__"] = new List<Dictionary<string, object>>();
+            }
+
+            var callbacks = (List<Dictionary<string, object>>)inputs["__callbacks__"];
+            callbacks.Add(new Dictionary<string, object>
+            {
+                { "name", actionKey },
+                { "value", actionValue }
+            });
+
+            return null; // Return null so the callback is not added to the results dictionary
+        }
+        
+        private object SetValue(IDictionary<string, object> inputs, string actionKey, object actionValue)
+        {
+            return actionValue;
         }
         
         private object AddValues(IDictionary<string, object> inputs, string actionKey, object actionValue)
