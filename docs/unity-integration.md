@@ -1,13 +1,12 @@
 # Unity Integration
 
-This document explains how to integrate the Rule Engine into a Unity project.
+This document explains how to integrate the Rule Engine into a Unity project using the DLL-based approach.
 
 ## Table of Contents
 - [Setup](#setup)
 - [Creating a MonoBehaviour Wrapper](#creating-a-monobehaviour-wrapper)
 - [Storing Rule Definitions](#storing-rule-definitions)
 - [Validating Rules](#validating-rules)
-- [Handling NCalc Compatibility](#handling-ncalc-compatibility)
 - [Testing in Unity](#testing-in-unity)
 - [Example Integration](#example-integration)
 
@@ -15,9 +14,26 @@ This document explains how to integrate the Rule Engine into a Unity project.
 
 To use this rule engine in a Unity project:
 
-1. Copy the `RuleEngine` folder to your Unity project's `Assets/Scripts` directory
-2. Copy the `Plugins` folder to your Unity project's `Assets` directory (this contains the required NCalc.dll)
-3. Alternatively, you can download NCalc.dll (version 1.3.8) from [NCalc GitHub releases](https://github.com/ncalc/ncalc/releases/tag/1.3.8) if needed
+1. Build the RuleEngine project:
+   - Open the solution in Visual Studio or your preferred IDE
+   - Build the project in Release mode
+   - The DLLs will be generated in the `RuleEngine/bin/Release/netstandard2.1` directory
+
+2. In your Unity project:
+   - Create a `Plugins` folder in your Unity project's Assets directory if it doesn't exist
+   - Copy the following files from the RuleEngine build output to the Unity Plugins folder:
+     - `RuleEngine.dll`
+     - `NCalc.dll`
+     - `Newtonsoft.Json.dll`
+
+3. For IL2CPP builds, create a `link.xml` file in your Assets folder:
+```xml
+<linker>
+  <assembly fullname="NCalc" preserve="all"/>
+  <assembly fullname="RuleEngine" preserve="all"/>
+  <assembly fullname="Newtonsoft.Json" preserve="all"/>
+</linker>
+```
 
 ## Creating a MonoBehaviour Wrapper
 
@@ -99,21 +115,6 @@ private void ValidateAndAddRule(string ruleJson)
 }
 ```
 
-## Handling NCalc Compatibility
-
-NCalc is a .NET Framework library, but it works in Unity with .NET Standard 2.1. However, there are some compatibility considerations:
-
-1. If you encounter any compatibility issues, consider using a Unity-compatible fork of NCalc
-2. For IL2CPP builds, ensure NCalc is included in the [link.xml](https://docs.unity3d.com/Manual/ManagedCodeStripping.html) file to prevent code stripping
-
-Example link.xml file (place in Assets folder):
-```xml
-<linker>
-  <assembly fullname="NCalc" preserve="all"/>
-  <assembly fullname="RuleEngine" preserve="all"/>
-</linker>
-```
-
 ## Testing in Unity
 
 1. Create a simple test script that loads and executes rules
@@ -175,4 +176,12 @@ var builder = new RuleEngineBuilder()
 
 // Build the rule engine
 _ruleEngine = builder.Build();
-``` 
+```
+
+## Updating the Rule Engine
+
+When you need to update the Rule Engine:
+
+1. Rebuild the RuleEngine project
+2. Copy the new DLLs from the build output to your Unity project's Plugins folder
+3. Unity will automatically recompile and update the references 
