@@ -112,11 +112,18 @@ namespace RuleEngine.Rules
                             inputs["__callbacks__"] = new List<Dictionary<string, object>>();
                         }
 
+                        // Evaluate the callback value against results
+                        object evaluatedCallbackValue = callbackValue;
+                        if (results.ContainsKey(callbackValue))
+                        {
+                            evaluatedCallbackValue = results[callbackValue];
+                        }
+
                         var callbacks = (List<Dictionary<string, object>>)inputs["__callbacks__"];
                         callbacks.Add(new Dictionary<string, object>
                         {
                             { "name", actionExpr.Key },
-                            { "value", callbackValue }
+                            { "value", evaluatedCallbackValue }
                         });
 
                         // Copy callbacks to results

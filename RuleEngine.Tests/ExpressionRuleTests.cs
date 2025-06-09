@@ -716,5 +716,154 @@ namespace RuleEngine.Tests
             Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
             Assert.That(callbacks[0]["value"], Is.EqualTo("spin_collected"));
         }
+
+        [Test]
+        public void ExecuteExpressionRule_WithCalculatedValueInCallback_ReturnsExpectedResult()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""calculated_callback_rule"",
+                ""ruleName"": ""Calculated Callback Rule"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""value > 10"",
+                ""actionExpressions"": {
+                    ""calculatedValue"": ""value * 2"",
+                    ""notify"": ""callback(calculatedValue)""
+                }
+            }";
+
+            var rule = _parser.Parse(ruleJson);
+            var inputs = new Dictionary<string, object>
+            {
+                { "value", 15 }
+            };
+
+            // Act
+            var results = rule.Execute(inputs);
+
+            // Assert
+            Assert.That(results["calculatedValue"], Is.EqualTo(30)); // 15 * 2
+            Assert.That(results.ContainsKey("__callbacks__"), Is.True);
+            var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+            Assert.That(callbacks, Is.Not.Null);
+            Assert.That(callbacks.Count, Is.EqualTo(1));
+            Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
+            Assert.That(callbacks[0]["value"], Is.EqualTo(30)); // Should contain the actual calculated value
+        }
+
+        [Test]
+        public void ExecuteExpressionRule_WithMultipleCalculatedValuesInCallback_ReturnsExpectedResult()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""multiple_calculated_callback_rule"",
+                ""ruleName"": ""Multiple Calculated Callback Rule"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""value > 10"",
+                ""actionExpressions"": {
+                    ""sum"": ""value + 5"",
+                    ""product"": ""value * 2"",
+                    ""notify"": ""callback(sum)"",
+                    ""alert"": ""callback(product)""
+                }
+            }";
+
+            var rule = _parser.Parse(ruleJson);
+            var inputs = new Dictionary<string, object>
+            {
+                { "value", 15 }
+            };
+
+            // Act
+            var results = rule.Execute(inputs);
+
+            // Assert
+            Assert.That(results["sum"], Is.EqualTo(20)); // 15 + 5
+            Assert.That(results["product"], Is.EqualTo(30)); // 15 * 2
+            Assert.That(results.ContainsKey("__callbacks__"), Is.True);
+            var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+            Assert.That(callbacks, Is.Not.Null);
+            Assert.That(callbacks.Count, Is.EqualTo(2));
+            
+            // Verify first callback
+            Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
+            Assert.That(callbacks[0]["value"], Is.EqualTo(20));
+            
+            // Verify second callback
+            Assert.That(callbacks[1]["name"], Is.EqualTo("alert"));
+            Assert.That(callbacks[1]["value"], Is.EqualTo(30));
+        }
+
+        [Test]
+        public void ExecuteExpressionRule_WithNestedCalculatedValuesInCallback_ReturnsExpectedResult()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""nested_calculated_callback_rule"",
+                ""ruleName"": ""Nested Calculated Callback Rule"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""value > 10"",
+                ""actionExpressions"": {
+                    ""baseValue"": ""value * 2"",
+                    ""finalValue"": ""baseValue + 10"",
+                    ""notify"": ""callback(finalValue)""
+                }
+            }";
+
+            var rule = _parser.Parse(ruleJson);
+            var inputs = new Dictionary<string, object>
+            {
+                { "value", 15 }
+            };
+
+            // Act
+            var results = rule.Execute(inputs);
+
+            // Assert
+            Assert.That(results["baseValue"], Is.EqualTo(30)); // 15 * 2
+            Assert.That(results["finalValue"], Is.EqualTo(40)); // 30 + 10
+            Assert.That(results.ContainsKey("__callbacks__"), Is.True);
+            var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+            Assert.That(callbacks, Is.Not.Null);
+            Assert.That(callbacks.Count, Is.EqualTo(1));
+            Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
+            Assert.That(callbacks[0]["value"], Is.EqualTo(40));
+        }
+
+        [Test]
+        public void ExecuteExpressionRule_WithConditionalCalculatedValueInCallback_ReturnsExpectedResult()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""conditional_calculated_callback_rule"",
+                ""ruleName"": ""Conditional Calculated Callback Rule"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""value > 10"",
+                ""actionExpressions"": {
+                    ""isHigh"": ""value > 20"",
+                    ""calculatedValue"": ""isHigh ? value * 3 : value * 2"",
+                    ""notify"": ""callback(calculatedValue)""
+                }
+            }";
+
+            var rule = _parser.Parse(ruleJson);
+            var inputs = new Dictionary<string, object>
+            {
+                { "value", 25 }
+            };
+
+            // Act
+            var results = rule.Execute(inputs);
+
+            // Assert
+            Assert.That(results["isHigh"], Is.EqualTo(true));
+            Assert.That(results["calculatedValue"], Is.EqualTo(75)); // 25 * 3
+            Assert.That(results.ContainsKey("__callbacks__"), Is.True);
+            var callbacks = results["__callbacks__"] as List<Dictionary<string, object>>;
+            Assert.That(callbacks, Is.Not.Null);
+            Assert.That(callbacks.Count, Is.EqualTo(1));
+            Assert.That(callbacks[0]["name"], Is.EqualTo("notify"));
+            Assert.That(callbacks[0]["value"], Is.EqualTo(75));
+        }
     }
 } 
