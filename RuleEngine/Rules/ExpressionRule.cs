@@ -48,6 +48,9 @@ namespace RuleEngine.Rules
 
         public override IDictionary<string, object> Execute(IDictionary<string, object> inputs)
         {
+            if (inputs == null)
+                throw new ArgumentNullException(nameof(inputs));
+
             var results = new Dictionary<string, object>();
 
             try
@@ -75,13 +78,24 @@ namespace RuleEngine.Rules
                         continue;
                     }
 
-                    var expression = new Expression(actionExpr.Value);
+                    var expression = new NCalc.Expression(actionExpr.Value);
 
                     // Set parameters from inputs
                     foreach (var input in inputs)
                     {
                         expression.Parameters[input.Key] = input.Value;
                     }
+
+                    // Add ArrayGet support
+                    expression.EvaluateFunction += (name, args) =>
+                    {
+                        if (name == "ArrayGet")
+                        {
+                            var array = args.Parameters[0].Evaluate() as IEnumerable<object>;
+                            var index = Convert.ToInt32(args.Parameters[1].Evaluate());
+                            args.Result = array?.ElementAt(index);
+                        }
+                    };
 
                     // Include the other results in parameters
                     foreach (var result in results)
