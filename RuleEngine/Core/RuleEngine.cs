@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RuleEngine.Core
 {
@@ -22,7 +21,13 @@ namespace RuleEngine.Core
 
         public void RemoveRule(string ruleId)
         {
-            _rules.RemoveAll(r => r.RuleId == ruleId);
+            for (int i = _rules.Count - 1; i >= 0; i--)
+            {
+                if (_rules[i].RuleId == ruleId)
+                {
+                    _rules.RemoveAt(i);
+                }
+            }
         }
 
         public IDictionary<string, object> ExecuteRules(IDictionary<string, object> inputs)
@@ -47,7 +52,12 @@ namespace RuleEngine.Core
 
         public IEnumerable<IRule> GetRules()
         {
-            return _rules.ToList();
+            var rulesCopy = new List<IRule>(_rules.Count);
+            foreach (var rule in _rules)
+            {
+                rulesCopy.Add(rule);
+            }
+            return rulesCopy;
         }
     }
 } 

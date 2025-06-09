@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using NCalc;
 using RuleEngine.Core;
 
@@ -34,11 +33,52 @@ namespace RuleEngine.Rules
                     expression.Parameters[input.Key] = input.Value;
                 }
 
-                // Evaluate the expression
-                var result = expression.Evaluate();
+                // Add ArrayGet, IsNull, and Nvl support
+                expression.EvaluateFunction += (name, args) =>
+                {
+                    if (name == "ArrayGet")
+                    {
+                        var arrayObj = args.Parameters[0].Evaluate();
+                        var index = Convert.ToInt32(args.Parameters[1].Evaluate());
+                        object result = null;
+                        if (arrayObj is Array arr)
+                        {
+                            result = arr.GetValue(index);
+                        }
+                        else if (arrayObj is object[] objArr)
+                        {
+                            result = objArr[index];
+                        }
+                        else if (arrayObj is System.Collections.IEnumerable genEnum)
+                        {
+                            var enumerator = genEnum.GetEnumerator();
+                            int i = 0;
+                            while (enumerator.MoveNext())
+                            {
+                                if (i == index)
+                                {
+                                    result = enumerator.Current;
+                                    break;
+                                }
+                                i++;
+                            }
+                        }
+                        args.Result = result;
+                    }
+                    else if (name == "IsNull")
+                    {
+                        var value = args.Parameters[0].Evaluate();
+                        args.Result = value == null;
+                    }
+                    else if (name == "Nvl")
+                    {
+                        var value = args.Parameters[0].Evaluate();
+                        var defaultValue = args.Parameters[1].Evaluate();
+                        args.Result = value ?? defaultValue;
+                    }
+                };
 
-                // Convert result to boolean
-                return Convert.ToBoolean(result);
+                return Convert.ToBoolean(expression.Evaluate());
             }
             catch (Exception)
             {
@@ -55,6 +95,12 @@ namespace RuleEngine.Rules
 
             try
             {
+                // First evaluate the condition
+                if (!Evaluate(inputs))
+                {
+                    return results; // Return empty results if condition is not met
+                }
+
                 foreach (var actionExpr in _actionExpressions)
                 {
                     // Check if this is a callback action
@@ -86,14 +132,48 @@ namespace RuleEngine.Rules
                         expression.Parameters[input.Key] = input.Value;
                     }
 
-                    // Add ArrayGet support
+                    // Add ArrayGet, IsNull, and Nvl support
                     expression.EvaluateFunction += (name, args) =>
                     {
                         if (name == "ArrayGet")
                         {
-                            var array = args.Parameters[0].Evaluate() as IEnumerable<object>;
+                            var arrayObj = args.Parameters[0].Evaluate();
                             var index = Convert.ToInt32(args.Parameters[1].Evaluate());
-                            args.Result = array?.ElementAt(index);
+                            object result = null;
+                            if (arrayObj is Array arr)
+                            {
+                                result = arr.GetValue(index);
+                            }
+                            else if (arrayObj is object[] objArr)
+                            {
+                                result = objArr[index];
+                            }
+                            else if (arrayObj is System.Collections.IEnumerable genEnum)
+                            {
+                                var enumerator = genEnum.GetEnumerator();
+                                int i = 0;
+                                while (enumerator.MoveNext())
+                                {
+                                    if (i == index)
+                                    {
+                                        result = enumerator.Current;
+                                        break;
+                                    }
+                                    i++;
+                                }
+                            }
+                            args.Result = result;
+                        }
+                        else if (name == "IsNull")
+                        {
+                            var value = args.Parameters[0].Evaluate();
+                            args.Result = value == null;
+                        }
+                        else if (name == "Nvl")
+                        {
+                            var value = args.Parameters[0].Evaluate();
+                            var defaultValue = args.Parameters[1].Evaluate();
+                            args.Result = value ?? defaultValue;
                         }
                     };
 
@@ -115,33 +195,33 @@ namespace RuleEngine.Rules
                 {
                     results["__callbacks__"] = inputs["__callbacks__"];
                 }
+
+                return results;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error executing expressions: {ex.Message}", ex);
+                throw new InvalidOperationException($"Error executing expression rule: {ex.Message}", ex);
             }
-
-            return results;
         }
 
         private bool IsCallbackAction(string actionValue, out string callbackValue)
         {
             callbackValue = null;
-
-            // Check for => operator
+            
+            // Check for arrow syntax (=>)
             if (actionValue.StartsWith("=>"))
             {
                 callbackValue = actionValue.Substring(2).Trim();
                 return true;
             }
-
-            // Check for callback operator
+            
+            // Check for callback function syntax
             if (actionValue.StartsWith("callback(") && actionValue.EndsWith(")"))
             {
                 callbackValue = actionValue.Substring(9, actionValue.Length - 10).Trim();
                 return true;
             }
-
+            
             return false;
         }
     }

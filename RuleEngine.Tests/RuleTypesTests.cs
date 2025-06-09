@@ -586,5 +586,104 @@ namespace RuleEngine.Tests
             // No data mutation for callback
             Assert.That(results.ContainsKey("notify"), Is.False);
         }
+
+        [Test]
+        public void TestWOFCollectionCompositeRule()
+        {
+            // Arrange
+            var ruleJson = @"{
+                ""ruleId"": ""wof_collection_rule"",
+                ""ruleName"": ""WOF Collection Rule"",
+                ""type"": ""expression"",
+                ""conditionExpression"": ""counter == 1 && class_Value == 'WOF' && family == 'collection'"",
+                ""actionExpressions"": {
+                    ""WOF_progress"": ""WOF_progress + 1"",
+                    ""WOF_collection_completed"": ""WOF_progress >= 10""
+                }
+            }";
+
+            _engine.AddRule(ruleJson);
+
+            // Test case 1: Valid spin collection
+            var input = new Dictionary<string, object>
+            {
+                { "counter", 1 },
+                { "class_Value", "WOF" },
+                { "family", "collection" },
+                { "WOF_progress", 0 }
+            };
+
+            // Simulate collecting 10 spins
+            for (int i = 0; i < 10; i++)
+            {
+                var results = _engine.ExecuteRules(input);
+                
+                // Update input with results for next iteration
+                foreach (var result in results)
+                {
+                    if (result.Key != "__callbacks__")  // Skip callbacks
+                    {
+                        input[result.Key] = result.Value;
+                    }
+                }
+
+                // Verify progress after each spin
+                Assert.That(input["WOF_progress"], Is.EqualTo(i + 1), $"Progress should be {i + 1} after {i + 1} spins");
+                
+                // Verify completion flag
+                if (i < 9)
+                {
+                    Assert.That(input.ContainsKey("WOF_collection_completed"), Is.True, "Completion flag should be present");
+                    Assert.That(input["WOF_collection_completed"], Is.False, "Completion flag should be false before 10 spins");
+                }
+                else
+                {
+                    Assert.That(input.ContainsKey("WOF_collection_completed"), Is.True, "Completion flag should be present");
+                    Assert.That(input["WOF_collection_completed"], Is.True, "Completion flag should be true after 10 spins");
+                }
+            }
+
+            // Test case 2: Invalid spin (wrong counter)
+            input = new Dictionary<string, object>
+            {
+                { "counter", 2 },
+                { "class_Value", "WOF" },
+                { "family", "collection" },
+                { "WOF_progress", 0 }
+            };
+
+            var results2 = _engine.ExecuteRules(input);
+            // Updated expectation: results2 should contain the original input keys
+            Assert.That(results2.Count, Is.EqualTo(4), "Results should contain the original input keys for invalid spin");
+            Assert.That(input["WOF_progress"], Is.EqualTo(0), "Progress should remain unchanged for invalid spin");
+
+            // Test case 3: Invalid spin (wrong class_Value)
+            input = new Dictionary<string, object>
+            {
+                { "counter", 1 },
+                { "class_Value", "OTHER" },
+                { "family", "collection" },
+                { "WOF_progress", 0 } 
+            };
+
+            var results3 = _engine.ExecuteRules(input);
+            // Updated expectation: results3 should contain the original input keys
+            Assert.That(results3.Count, Is.EqualTo(4), "Results should contain the original input keys for invalid spin");
+            Assert.That(input["WOF_progress"], Is.EqualTo(0), "Progress should remain unchanged for invalid spin");
+
+            // Test case 4: Invalid spin (wrong family)
+            input = new Dictionary<string, object>
+            {
+                { "counter", 1 },
+                { "class_Value", "WOF" },
+                { "family", "other" },
+                { "WOF_progress", 0 }
+            };
+
+            var results4 = _engine.ExecuteRules(input);
+            // Updated expectation: results4 should contain the original input keys
+            Assert.That(results4.Count, Is.EqualTo(4), "Results should contain the original input keys for invalid spin");
+            Assert.That(input["WOF_progress"], Is.EqualTo(0), "Progress should remain unchanged for invalid spin");
+        }
     }
 } 

@@ -96,8 +96,13 @@ namespace RuleEngine.Core
             // Parse the logical operator
             if (!Enum.TryParse<LogicalOperator>(ruleData.Operator, true, out var logicalOperator))
             {
-                throw new ArgumentException($"Invalid logical operator: {ruleData.Operator}. " +
-                                          $"Must be one of: {string.Join(", ", Enum.GetNames(typeof(LogicalOperator)))}");
+                var operatorNames = new List<string>();
+                foreach (var name in Enum.GetNames(typeof(LogicalOperator)))
+                {
+                    operatorNames.Add(name);
+                }
+                var validOperators = string.Join(", ", operatorNames);
+                throw new ArgumentException($"Invalid logical operator: {ruleData.Operator}. Must be one of: {validOperators}");
             }
 
             // Parse child rules

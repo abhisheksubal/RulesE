@@ -342,7 +342,7 @@ namespace RuleEngine.Tests
         }
 
         [Test]
-        public void ExecuteExpressionRule_WithMissingInputs_ThrowsInvalidOperationException()
+        public void ExecuteExpressionRule_WithMissingInputs_ReturnsEmptyDictionary()
         {
             // Arrange
             var ruleJson = @"{
@@ -358,8 +358,11 @@ namespace RuleEngine.Tests
             var rule = _parser.Parse(ruleJson);
             var inputs = new Dictionary<string, object>();
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => rule.Execute(inputs));
+            // Act
+            var results = rule.Execute(inputs);
+
+            // Assert
+            Assert.That(results, Is.Empty);
         }
 
         [Test]
@@ -450,15 +453,15 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""array_rule"",
                 ""ruleName"": ""Array Processing Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""scores[0] + scores[1] + scores[2] + scores[3] + scores[4] > 250"",
+                ""conditionExpression"": ""ArrayGet(scores, 0) + ArrayGet(scores, 1) + ArrayGet(scores, 2) + ArrayGet(scores, 3) + ArrayGet(scores, 4) > 250"",
                 ""actionExpressions"": {
-                    ""totalScores"": ""scores[0] + scores[1] + scores[2] + scores[3] + scores[4]"",
+                    ""totalScores"": ""ArrayGet(scores, 0) + ArrayGet(scores, 1) + ArrayGet(scores, 2) + ArrayGet(scores, 3) + ArrayGet(scores, 4)"",
                     ""scoreCount"": ""5"",
-                    ""hasHighScores"": ""scores[3] >= 80"",
-                    ""hasLowScores"": ""scores[0] < 50"",
-                    ""firstScore"": ""scores[0]"",
-                    ""lastScore"": ""scores[4]"",
-                    ""middleScore"": ""scores[2]""
+                    ""hasHighScores"": ""ArrayGet(scores, 3) >= 80"",
+                    ""hasLowScores"": ""ArrayGet(scores, 0) < 50"",
+                    ""firstScore"": ""ArrayGet(scores, 0)"",
+                    ""lastScore"": ""ArrayGet(scores, 4)"",
+                    ""middleScore"": ""ArrayGet(scores, 2)""
                 }
             }";
 
@@ -498,15 +501,15 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""multi_array_rule"",
                 ""ruleName"": ""Multiple Array Processing Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""(scores1[0] + scores1[1] + scores1[2] + scores1[3]) > (scores2[0] + scores2[1] + scores2[2] + scores2[3])"",
+                ""conditionExpression"": ""(ArrayGet(scores1, 0) + ArrayGet(scores1, 1) + ArrayGet(scores1, 2) + ArrayGet(scores1, 3)) > (ArrayGet(scores2, 0) + ArrayGet(scores2, 1) + ArrayGet(scores2, 2) + ArrayGet(scores2, 3))"",
                 ""actionExpressions"": {
-                    ""score1Total"": ""scores1[0] + scores1[1] + scores1[2] + scores1[3]"",
-                    ""score2Total"": ""scores2[0] + scores2[1] + scores2[2] + scores2[3]"",
-                    ""totalScores"": ""scores1[0] + scores1[1] + scores1[2] + scores1[3] + scores2[0] + scores2[1] + scores2[2] + scores2[3]"",
-                    ""score1Max"": ""Max(Max(scores1[0], scores1[1]), Max(scores1[2], scores1[3]))"",
-                    ""score2Max"": ""Max(Max(scores2[0], scores2[1]), Max(scores2[2], scores2[3]))"",
-                    ""score1Min"": ""Min(Min(scores1[0], scores1[1]), Min(scores1[2], scores1[3]))"",
-                    ""score2Min"": ""Min(Min(scores2[0], scores2[1]), Min(scores2[2], scores2[3]))"",
+                    ""score1Total"": ""ArrayGet(scores1, 0) + ArrayGet(scores1, 1) + ArrayGet(scores1, 2) + ArrayGet(scores1, 3)"",
+                    ""score2Total"": ""ArrayGet(scores2, 0) + ArrayGet(scores2, 1) + ArrayGet(scores2, 2) + ArrayGet(scores2, 3)"",
+                    ""totalScores"": ""ArrayGet(scores1, 0) + ArrayGet(scores1, 1) + ArrayGet(scores1, 2) + ArrayGet(scores1, 3) + ArrayGet(scores2, 0) + ArrayGet(scores2, 1) + ArrayGet(scores2, 2) + ArrayGet(scores2, 3)"",
+                    ""score1Max"": ""Max(Max(ArrayGet(scores1, 0), ArrayGet(scores1, 1)), Max(ArrayGet(scores1, 2), ArrayGet(scores1, 3)))"",
+                    ""score2Max"": ""Max(Max(ArrayGet(scores2, 0), ArrayGet(scores2, 1)), Max(ArrayGet(scores2, 2), ArrayGet(scores2, 3)))"",
+                    ""score1Min"": ""Min(Min(ArrayGet(scores1, 0), ArrayGet(scores1, 1)), Min(ArrayGet(scores1, 2), ArrayGet(scores1, 3)))"",
+                    ""score2Min"": ""Min(Min(ArrayGet(scores2, 0), ArrayGet(scores2, 1)), Min(ArrayGet(scores2, 2), ArrayGet(scores2, 3)))"",
                     ""totalStudents"": ""8""
                 }
             }";
@@ -602,10 +605,10 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""array_rule"",
                 ""ruleName"": ""Array Input Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""arr != null"",
+                ""conditionExpression"": ""!IsNull(arr)"",
                 ""actionExpressions"": {
-                    ""isArray"": ""arr != null"",
-                    ""firstElement"": ""arr[0]""
+                    ""isArray"": ""!IsNull(arr)"",
+                    ""firstElement"": ""ArrayGet(arr, 0)""
                 }
             }";
 
@@ -615,19 +618,11 @@ namespace RuleEngine.Tests
                 { "arr", new int[] { 10, 20, 30 } }
             };
 
-            // Act & Assert
-            // NCalc does not support array indexing, so this should throw or fail gracefully
-            try
-            {
-                var results = rule.Execute(inputs);
-                Assert.That(results.ContainsKey("isArray"), Is.True);
-                // If array indexing is supported, this will pass
-                Assert.That(results["firstElement"], Is.EqualTo(10));
-            }
-            catch (Exception ex)
-            {
-                Assert.That(ex, Is.TypeOf<InvalidOperationException>());
-            }
+            // Act
+            var results = rule.Execute(inputs);
+            // Assert
+            Assert.That(results.ContainsKey("isArray"), Is.True);
+            Assert.That(results["firstElement"], Is.EqualTo(10));
         }
 
         [Test]

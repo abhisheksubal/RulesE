@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using RuleEngine.Core;
 
 namespace RuleEngine.Rules
@@ -27,7 +26,11 @@ namespace RuleEngine.Rules
             : base(ruleId, ruleName)
         {
             _operator = logicalOperator;
-            _rules = rules?.ToList() ?? throw new ArgumentNullException(nameof(rules));
+            _rules = new List<IRule>();
+            foreach (var rule in rules)
+            {
+                _rules.Add(rule);
+            }
             
             if (_rules.Count == 0)
             {
@@ -50,10 +53,24 @@ namespace RuleEngine.Rules
                 switch (_operator)
                 {
                     case LogicalOperator.And:
-                        return _rules.All(rule => rule.Evaluate(inputs));
+                        foreach (var rule in _rules)
+                        {
+                            if (!rule.Evaluate(inputs))
+                            {
+                                return false;
+                            }
+                        }
+                        return true;
                     
                     case LogicalOperator.Or:
-                        return _rules.Any(rule => rule.Evaluate(inputs));
+                        foreach (var rule in _rules)
+                        {
+                            if (rule.Evaluate(inputs))
+                            {
+                                return true;
+                            }
+                        }
+                        return false;
                     
                     case LogicalOperator.Not:
                         return !_rules[0].Evaluate(inputs);
