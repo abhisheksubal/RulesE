@@ -398,31 +398,33 @@ namespace RuleEngine.Tests
             var ruleJson = @"{
                 ""ruleId"": ""input_mod_rule"",
                 ""ruleName"": ""Input Modification Rule"",
-                ""type"": ""simple"",
-                ""conditions"": {
-                    ""score"": {
-                        ""operator"": ""greaterThan"",
-                        ""value"": 50
+                ""type"": ""composite"",
+                ""operator"": ""And"",
+                ""rules"": [
+                    {
+                        ""ruleId"": ""score_check"",
+                        ""ruleName"": ""Score Check"",
+                        ""type"": ""simple"",
+                        ""conditions"": {
+                            ""score"": {
+                                ""operator"": ""greaterThan"",
+                                ""value"": 50
+                            }
+                        }
+                    },
+                    {
+                        ""ruleId"": ""score_mod"",
+                        ""ruleName"": ""Score Modification"",
+                        ""type"": ""expression"",
+                        ""conditionExpression"": ""true"",
+                        ""actionExpressions"": {
+                            ""newScore"": ""score + 10"",
+                            ""newLevel"": ""score"",
+                            ""newBonus"": ""bonus * 2"",
+                            ""message"": ""'Level up!'""
+                        }
                     }
-                },
-                ""actions"": {
-                    ""newScore"": {
-                        ""operator"": ""add"",
-                        ""value"": 10
-                    },
-                    ""newLevel"": {
-                        ""operator"": ""set"",
-                        ""value"": ""score""
-                    },
-                    ""newBonus"": {
-                        ""operator"": ""multiply"",
-                        ""value"": 2
-                    },
-                    ""message"": {
-                        ""operator"": ""set"",
-                        ""value"": ""Level up!""
-                    }
-                }
+                ]
             }";
 
             _engine.AddRule(ruleJson);
@@ -502,14 +504,8 @@ namespace RuleEngine.Tests
                         ""type"": ""simple"",
                         ""conditions"": {
                             ""score"": {
-                                ""operator"": ""greaterThan"",
-                                ""value"": 50
-                            }
-                        },
-                        ""actions"": {
-                            ""newScore"": {
-                                ""operator"": ""add"",
-                                ""value"": 10
+                                ""operator"": ""greaterThanOrEqual"",
+                                ""value"": 60
                             }
                         }
                     },
@@ -517,8 +513,9 @@ namespace RuleEngine.Tests
                         ""ruleId"": ""level_rule"",
                         ""ruleName"": ""Level Rule"",
                         ""type"": ""expression"",
-                        ""conditionExpression"": ""score > 60"",
+                        ""conditionExpression"": ""score >= 60"",
                         ""actionExpressions"": {
+                            ""newScore"": ""score + 10"",
                             ""newLevel"": ""score / 10"",
                             ""newBonus"": ""bonus * 2""
                         }
