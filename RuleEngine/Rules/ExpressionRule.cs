@@ -25,6 +25,7 @@ namespace RuleEngine.Rules
         {
             try
             {
+                Console.WriteLine($"[DEBUG] Evaluating condition: '{_conditionExpression}' with inputs: {string.Join(", ", inputs)}");
                 Expression expression = new Expression(_conditionExpression);
 
                 // Set parameters from inputs
@@ -78,10 +79,13 @@ namespace RuleEngine.Rules
                     }
                 };
 
-                return Convert.ToBoolean(expression.Evaluate());
+                var evalResult = expression.Evaluate();
+                Console.WriteLine($"[DEBUG] Evaluation result: {evalResult}");
+                return Convert.ToBoolean(evalResult);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"[DEBUG] Exception during evaluation: {ex.Message}");
                 return false;
             }
         }

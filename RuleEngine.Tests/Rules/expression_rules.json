@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "ruleId": "rule1",
+      "ruleName": "Age Check Rule",
+      "type": "expression",
+      "conditionExpression": "age > 18",
+      "actionExpressions": {
+        "status": "'adult'"
+      }
+    },
+    {
+      "ruleId": "rule2",
+      "ruleName": "Voting Eligibility Rule",
+      "type": "expression",
+      "conditionExpression": "status == 'adult'",
+      "actionExpressions": {
+        "canVote": "true"
+      }
+    }
+  ]
+} 

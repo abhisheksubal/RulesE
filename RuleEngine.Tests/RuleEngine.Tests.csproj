@@ -18,4 +18,10 @@
     <ProjectReference Include="..\RuleEngine\RuleEngine.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Rules\**\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project> 

@@ -37,9 +37,9 @@ namespace RuleEngine.Core
             
             foreach (var rule in _rules)
             {
-                if (rule.Evaluate(inputs))
+                if (rule.Evaluate(results))
                 {
-                    var ruleResults = rule.Execute(inputs);
+                    var ruleResults = rule.Execute(results);
                     foreach (var result in ruleResults)
                     {
                         results[result.Key] = result.Value;
