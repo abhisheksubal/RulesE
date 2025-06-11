@@ -3,19 +3,19 @@
     {
       "ruleId": "rule1",
       "ruleName": "Age Check Rule",
-      "type": "expression",
-      "conditionExpression": "age > 18",
+      "type": "lua",
+      "conditionExpression": "return tonumber(age) > 18",
       "actionExpressions": {
-        "status": "'adult'"
+        "status": "return 'adult'"
       }
     },
     {
       "ruleId": "rule2",
       "ruleName": "Voting Eligibility Rule",
-      "type": "expression",
-      "conditionExpression": "status == 'adult'",
+      "type": "lua",
+      "conditionExpression": "return status == 'adult'",
       "actionExpressions": {
-        "canVote": "true"
+        "canVote": "return true"
       }
     }
   ]
