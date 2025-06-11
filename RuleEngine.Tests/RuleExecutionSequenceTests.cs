@@ -27,6 +27,7 @@ namespace RuleEngine.Tests
             factoryRegistry.RegisterFactory(new ExpressionRuleFactory());
             factoryRegistry.RegisterFactory(new SimpleRuleFactory(operatorRegistry));
             factoryRegistry.RegisterFactory(new CompositeRuleFactory(operatorRegistry, factoryRegistry));
+            factoryRegistry.RegisterFactory(new LuaRuleFactory());
 
             _ruleParser = new JsonRuleParser(factoryRegistry);
             _ruleEngine = new RuleEngine.Core.RuleEngine(_ruleParser);

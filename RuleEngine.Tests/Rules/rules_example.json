@@ -1,0 +1,44 @@
+{
+    "rules": [
+      {
+        "ruleId": "wof_collection_rule",
+        "ruleName": "WOF Collection Rule",
+        "type": "expression",
+        "conditionExpression": "counter == 'gameplay' && class_Value == 'spin_gained' && family == 'wheel_of_fortune'",
+        "actionExpressions": {
+          "wof_collection_rule_progress": "wof_collection_rule_progress+1",
+          "completed_count": "if(wof_collection_rule_completed == false && wof_collection_rule_progress>=ArrayGet(wof_collection_rule_target,stage-1),completed_count+1,completed_count)",
+          "wof_collection_rule_completed": "wof_collection_rule_progress>=ArrayGet(wof_collection_rule_target,stage-1)"
+        }
+      },
+      {
+        "ruleId": "mk_collection_rule",
+        "ruleName": "MK Collection Rule",
+        "type": "expression",
+        "conditionExpression": "counter == 'gameplay' && class_Value == 'spin_gained' && family == 'wheel_of_fortune'",
+        "actionExpressions": {
+          "mk_collection_rule_progress": "mk_collection_rule_progress+1",
+          "completed_count": "if(mk_collection_rule_completed == false && mk_collection_rule_progress>=ArrayGet(mk_collection_rule_target,stage-1),completed_count+1,completed_count)",
+          "mk_collection_rule_completed": "mk_collection_rule_progress>=ArrayGet(mk_collection_rule_target,stage-1)"
+        }
+      },
+      {
+        "ruleId": "stage_clear",
+        "ruleName": "Stage Clear Rule",
+        "type": "expression",
+        "conditionExpression": "completed_count == task_count",
+        "actionExpressions": {
+          "completed_count": 0,
+          "stage": "if(stage<4,stage+1,stage)"
+        }
+      }
+    ]
+  } 
+  
+  
+  
+  
+  
+  
+  
+  

@@ -1,0 +1,36 @@
+{
+    "rules": [
+      {
+        "ruleId": "wof_collection_rule",
+        "ruleName": "WOF Collection Rule",
+        "type": "lua",
+        "conditionExpression": "return counter == 'gameplay' and class_Value == 'spin_gained' and family == 'wheel_of_fortune'",
+        "actionExpressions": {
+          "wof_collection_rule_progress": "return (wof_collection_rule_progress or 0) + 1",
+          "completed_count": "local completed = wof_collection_rule_completed or false; local progress = wof_collection_rule_progress or 0; local target = 0; if wof_collection_rule_target and #wof_collection_rule_target > 0 then local stage_index = (stage or 1) - 1; if stage_index >= 0 and stage_index < #wof_collection_rule_target then target = wof_collection_rule_target[stage_index + 1] end end; return not completed and progress >= target and (completed_count or 0) + 1 or (completed_count or 0)",
+          "wof_collection_rule_completed": "local progress = wof_collection_rule_progress or 0; local target = 0; if wof_collection_rule_target and #wof_collection_rule_target > 0 then local stage_index = (stage or 1) - 1; if stage_index >= 0 and stage_index < #wof_collection_rule_target then target = wof_collection_rule_target[stage_index + 1] end end; return progress >= target"
+        }
+      },
+      {
+        "ruleId": "mk_collection_rule",
+        "ruleName": "MK Collection Rule",
+        "type": "lua",
+        "conditionExpression": "return counter == 'gameplay' and class_Value == 'spin_gained' and family == 'wheel_of_fortune'",
+        "actionExpressions": {
+          "mk_collection_rule_progress": "return (mk_collection_rule_progress or 0) + 1",
+          "completed_count": "local completed = mk_collection_rule_completed or false; local progress = mk_collection_rule_progress or 0; local target = 0; if mk_collection_rule_target and #mk_collection_rule_target > 0 then local stage_index = (stage or 1) - 1; if stage_index >= 0 and stage_index < #mk_collection_rule_target then target = mk_collection_rule_target[stage_index + 1] end end; return not completed and progress >= target and (completed_count or 0) + 1 or (completed_count or 0)",
+          "mk_collection_rule_completed": "local progress = mk_collection_rule_progress or 0; local target = 0; if mk_collection_rule_target and #mk_collection_rule_target > 0 then local stage_index = (stage or 1) - 1; if stage_index >= 0 and stage_index < #mk_collection_rule_target then target = mk_collection_rule_target[stage_index + 1] end end; return progress >= target"
+        }
+      },
+      {
+        "ruleId": "stage_clear",
+        "ruleName": "Stage Clear Rule",
+        "type": "lua",
+        "conditionExpression": "return (completed_count or 0) == (task_count or 0)",
+        "actionExpressions": {
+          "completed_count": "return 0",
+          "stage": "local current_stage = stage or 0; if current_stage < 4 then return current_stage + 1 else return current_stage end"
+        }
+      }
+    ]
+} 
