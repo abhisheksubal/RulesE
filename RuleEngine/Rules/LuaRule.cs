@@ -24,14 +24,13 @@ namespace RuleEngine.Rules
             _luaState = LuaState.Create();
             _luaState.OpenStandardLibraries();
             _luaState.OpenMathLibrary();
-            _luaState.DoStringAsync("math = require('math')").GetAwaiter().GetResult();
-            var debugResult = _luaState.DoStringAsync("return math.pi").GetAwaiter().GetResult();
-            Console.WriteLine($"[DEBUG] math.pi = {debugResult[0]}");
         }
 
         public override bool Evaluate(IDictionary<string, object> inputs)
         {
             _luaState.Environment.Clear();
+            _luaState.OpenStandardLibraries();
+            _luaState.OpenMathLibrary();
             try
             {
                 // Set up the Lua environment with input values
@@ -68,6 +67,9 @@ namespace RuleEngine.Rules
                 }
 
                 // Set up the Lua environment with input values
+                _luaState.Environment.Clear();
+                _luaState.OpenStandardLibraries();
+                _luaState.OpenMathLibrary();
                 foreach (var input in inputs)
                 {
                     _luaState.Environment[input.Key] = ConvertToLuaValue(input.Value);
