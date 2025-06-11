@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RuleEngine.Core;
 using Lua;
 using Lua.Standard;
@@ -44,9 +45,8 @@ namespace RuleEngine.Rules
                 var convertedResult = ConvertFromLuaValue(result[0]);
                 return convertedResult != null && Convert.ToBoolean(convertedResult);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"[DEBUG] Exception during Lua evaluation: {ex.Message}");
                 return false;
             }
         }
@@ -60,13 +60,13 @@ namespace RuleEngine.Rules
 
             try
             {
-                // First evaluate the condition
+                // First evaluate the condition using the current state (inputs)
                 if (!Evaluate(inputs))
                 {
                     return new Dictionary<string, object>(inputs); // Return copy of inputs if condition is not met
                 }
 
-                // Set up the Lua environment with input values
+                // Set up the Lua environment with current state (inputs)
                 _luaState.Environment.Clear();
                 _luaState.OpenStandardLibraries();
                 _luaState.OpenMathLibrary();
@@ -111,6 +111,15 @@ namespace RuleEngine.Rules
                     results[actionScript.Key] = convertedResult;
                     _luaState.Environment[actionScript.Key] = ConvertToLuaValue(convertedResult);
                 }
+
+                // Copy all input values to results to maintain state
+                //foreach (var input in inputs)
+                //{
+                //    if (!results.ContainsKey(input.Key))
+                //    {
+                //        results[input.Key] = input.Value;
+                //    }
+                //}
 
                 return results;
             }
@@ -161,9 +170,8 @@ namespace RuleEngine.Rules
                         return value.ToString();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"[DEBUG] Error converting Lua value: {ex.Message}");
                 return null;
             }
         }
