@@ -4,7 +4,7 @@
       "ruleId": "rule1",
       "ruleName": "Age Check Rule",
       "type": "expression",
-      "conditionExpression": "age > 18",
+      "conditionExpression": "isNumber(age) && cast(age, 'System.Double') > 18",
       "actionExpressions": {
         "status": "'adult'"
       }

@@ -396,9 +396,9 @@ namespace RuleEngine.Tests
                 ""type"": ""expression"",
                 ""conditionExpression"": ""true"",
                 ""actionExpressions"": {
-                    ""nullCheck"": ""IsNull(value)"",
-                    ""defaultValue"": ""Nvl(value, 'default')"",
-                    ""nullArithmetic"": ""Nvl(value, 0) + 5""
+                    ""nullCheck"": ""isNull(value)"",
+                    ""defaultValue"": ""if(isNull(value), 'default', value)"",
+                    ""nullArithmetic"": ""if(isNull(value), 0, value) + 5""
                 }
             }";
 
@@ -417,7 +417,7 @@ namespace RuleEngine.Tests
             Assert.That(Convert.ToDouble(results["nullArithmetic"]), Is.EqualTo(5.0));
         }
 
-        [Test, Ignore("NCalc does not support Convert.ToDouble/ToString by default")]
+        [Test]
         public void ExecuteExpressionRule_WithTypeConversion_HandlesCorrectly()
         {
             // Arrange
@@ -427,9 +427,9 @@ namespace RuleEngine.Tests
                 ""type"": ""expression"",
                 ""conditionExpression"": ""true"",
                 ""actionExpressions"": {
-                    ""stringToNumber"": ""Convert.ToDouble('123.45')"",
-                    ""numberToString"": ""Convert.ToString(123.45)"",
-                    ""booleanToString"": ""Convert.ToString(true)""
+                    ""stringToNumber"": ""cast('123.45', 'System.Double')"",
+                    ""numberToString"": ""cast(123.45, 'System.String')"",
+                    ""booleanToString"": ""cast(true, 'System.String')""
                 }
             }";
 
@@ -453,15 +453,15 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""array_rule"",
                 ""ruleName"": ""Array Processing Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""ArrayGet(scores, 0) + ArrayGet(scores, 1) + ArrayGet(scores, 2) + ArrayGet(scores, 3) + ArrayGet(scores, 4) > 250"",
+                ""conditionExpression"": ""itemAtIndex(scores, 0) + itemAtIndex(scores, 1) + itemAtIndex(scores, 2) + itemAtIndex(scores, 3) + itemAtIndex(scores, 4) > 250"",
                 ""actionExpressions"": {
-                    ""totalScores"": ""ArrayGet(scores, 0) + ArrayGet(scores, 1) + ArrayGet(scores, 2) + ArrayGet(scores, 3) + ArrayGet(scores, 4)"",
+                    ""totalScores"": ""itemAtIndex(scores, 0) + itemAtIndex(scores, 1) + itemAtIndex(scores, 2) + itemAtIndex(scores, 3) + itemAtIndex(scores, 4)"",
                     ""scoreCount"": ""5"",
-                    ""hasHighScores"": ""ArrayGet(scores, 3) >= 80"",
-                    ""hasLowScores"": ""ArrayGet(scores, 0) < 50"",
-                    ""firstScore"": ""ArrayGet(scores, 0)"",
-                    ""lastScore"": ""ArrayGet(scores, 4)"",
-                    ""middleScore"": ""ArrayGet(scores, 2)""
+                    ""hasHighScores"": ""itemAtIndex(scores, 3) >= 80"",
+                    ""hasLowScores"": ""itemAtIndex(scores, 0) < 50"",
+                    ""firstScore"": ""itemAtIndex(scores, 0)"",
+                    ""lastScore"": ""itemAtIndex(scores, 4)"",
+                    ""middleScore"": ""itemAtIndex(scores, 2)""
                 }
             }";
 
@@ -501,15 +501,15 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""multi_array_rule"",
                 ""ruleName"": ""Multiple Array Processing Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""(ArrayGet(scores1, 0) + ArrayGet(scores1, 1) + ArrayGet(scores1, 2) + ArrayGet(scores1, 3)) > (ArrayGet(scores2, 0) + ArrayGet(scores2, 1) + ArrayGet(scores2, 2) + ArrayGet(scores2, 3))"",
+                ""conditionExpression"": ""(itemAtIndex(scores1, 0) + itemAtIndex(scores1, 1) + itemAtIndex(scores1, 2) + itemAtIndex(scores1, 3)) > (itemAtIndex(scores2, 0) + itemAtIndex(scores2, 1) + itemAtIndex(scores2, 2) + itemAtIndex(scores2, 3))"",
                 ""actionExpressions"": {
-                    ""score1Total"": ""ArrayGet(scores1, 0) + ArrayGet(scores1, 1) + ArrayGet(scores1, 2) + ArrayGet(scores1, 3)"",
-                    ""score2Total"": ""ArrayGet(scores2, 0) + ArrayGet(scores2, 1) + ArrayGet(scores2, 2) + ArrayGet(scores2, 3)"",
-                    ""totalScores"": ""ArrayGet(scores1, 0) + ArrayGet(scores1, 1) + ArrayGet(scores1, 2) + ArrayGet(scores1, 3) + ArrayGet(scores2, 0) + ArrayGet(scores2, 1) + ArrayGet(scores2, 2) + ArrayGet(scores2, 3)"",
-                    ""score1Max"": ""Max(Max(ArrayGet(scores1, 0), ArrayGet(scores1, 1)), Max(ArrayGet(scores1, 2), ArrayGet(scores1, 3)))"",
-                    ""score2Max"": ""Max(Max(ArrayGet(scores2, 0), ArrayGet(scores2, 1)), Max(ArrayGet(scores2, 2), ArrayGet(scores2, 3)))"",
-                    ""score1Min"": ""Min(Min(ArrayGet(scores1, 0), ArrayGet(scores1, 1)), Min(ArrayGet(scores1, 2), ArrayGet(scores1, 3)))"",
-                    ""score2Min"": ""Min(Min(ArrayGet(scores2, 0), ArrayGet(scores2, 1)), Min(ArrayGet(scores2, 2), ArrayGet(scores2, 3)))"",
+                    ""score1Total"": ""itemAtIndex(scores1, 0) + itemAtIndex(scores1, 1) + itemAtIndex(scores1, 2) + itemAtIndex(scores1, 3)"",
+                    ""score2Total"": ""itemAtIndex(scores2, 0) + itemAtIndex(scores2, 1) + itemAtIndex(scores2, 2) + itemAtIndex(scores2, 3)"",
+                    ""totalScores"": ""itemAtIndex(scores1, 0) + itemAtIndex(scores1, 1) + itemAtIndex(scores1, 2) + itemAtIndex(scores1, 3) + itemAtIndex(scores2, 0) + itemAtIndex(scores2, 1) + itemAtIndex(scores2, 2) + itemAtIndex(scores2, 3)"",
+                    ""score1Max"": ""Max(Max(itemAtIndex(scores1, 0), itemAtIndex(scores1, 1)), Max(itemAtIndex(scores1, 2), itemAtIndex(scores1, 3)))"",
+                    ""score2Max"": ""Max(Max(itemAtIndex(scores2, 0), itemAtIndex(scores2, 1)), Max(itemAtIndex(scores2, 2), itemAtIndex(scores2, 3)))"",
+                    ""score1Min"": ""Min(Min(itemAtIndex(scores1, 0), itemAtIndex(scores1, 1)), Min(itemAtIndex(scores1, 2), itemAtIndex(scores1, 3)))"",
+                    ""score2Min"": ""Min(Min(itemAtIndex(scores2, 0), itemAtIndex(scores2, 1)), Min(itemAtIndex(scores2, 2), itemAtIndex(scores2, 3)))"",
                     ""totalStudents"": ""8""
                 }
             }";
@@ -605,10 +605,10 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""array_rule"",
                 ""ruleName"": ""Array Input Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""!IsNull(arr)"",
+                ""conditionExpression"": ""!isNull(arr)"",
                 ""actionExpressions"": {
-                    ""isArray"": ""!IsNull(arr)"",
-                    ""firstElement"": ""ArrayGet(arr, 0)""
+                    ""isArray"": ""!isNull(arr)"",
+                    ""firstElement"": ""itemAtIndex(arr, 0)""
                 }
             }";
 
@@ -635,9 +635,9 @@ namespace RuleEngine.Tests
                 ""type"": ""expression"",
                 ""conditionExpression"": ""true"",
                 ""actionExpressions"": {
-                    ""first"": ""ArrayGet(arr, 0)"",
-                    ""second"": ""ArrayGet(arr, 1)"",
-                    ""third"": ""ArrayGet(arr, 2)""
+                    ""first"": ""itemAtIndex(arr, 0)"",
+                    ""second"": ""itemAtIndex(arr, 1)"",
+                    ""third"": ""itemAtIndex(arr, 2)""
                 }
             }";
 
@@ -664,9 +664,9 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""array_get_condition_rule"",
                 ""ruleName"": ""Array Get Condition Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""ArrayGet(arr, 0) > 5"",
+                ""conditionExpression"": ""itemAtIndex(arr, 0) > 5"",
                 ""actionExpressions"": {
-                    ""result"": ""ArrayGet(arr, 0)""
+                    ""result"": ""itemAtIndex(arr, 0)""
                 }
             }";
 
@@ -691,9 +691,9 @@ namespace RuleEngine.Tests
                 ""ruleId"": ""callback_array_get_rule"",
                 ""ruleName"": ""Callback and Array Get Rule"",
                 ""type"": ""expression"",
-                ""conditionExpression"": ""ArrayGet(arr, 0) > 5"",
+                ""conditionExpression"": ""itemAtIndex(arr, 0) > 5"",
                 ""actionExpressions"": {
-                    ""result"": ""ArrayGet(arr, 1)"",
+                    ""result"": ""itemAtIndex(arr, 1)"",
                     ""notify"": ""=> spin_collected""
                 }
             }";
@@ -866,4 +866,4 @@ namespace RuleEngine.Tests
             Assert.That(callbacks[0]["value"], Is.EqualTo(75));
         }
     }
-} 
+}
