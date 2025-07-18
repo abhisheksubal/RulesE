@@ -8,8 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NCalc" Version="1.3.8" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
+  <!-- This package brings in NCalc as a dependency, so you only need this one reference -->
+  <PackageReference Include="PanoramicData.NCalcExtensions" Version="3.2.1" />
+  
+  <!-- This is required for some of the JSON functions in the extensions library -->
+  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+</ItemGroup>
 
 </Project> 

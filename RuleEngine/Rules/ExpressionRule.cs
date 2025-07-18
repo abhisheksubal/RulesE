@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
-using NCalc;
+using System.Linq;
 using RuleEngine.Core;
+// Import the NCalcExtensions namespace
+using PanoramicData.NCalcExtensions;
+// NCalc is still needed as ExtendedExpression inherits from it
+using NCalc;
 
 namespace RuleEngine.Rules
 {
@@ -21,63 +25,57 @@ namespace RuleEngine.Rules
             _actionExpressions = actionExpressions ?? throw new ArgumentNullException(nameof(actionExpressions));
         }
 
+        /// <summary>
+        /// Creates and configures an ExtendedExpression.
+        /// </summary>
+        /// <param name="expressionString">The expression to evaluate.</param>
+        /// <param name="parameters">The parameters to use in the expression.</param>
+        /// <returns>A configured ExtendedExpression instance.</returns>
+        private ExtendedExpression CreateAndConfigureExpression(string expressionString, IDictionary<string, object> parameters)
+        {
+            // Use ExtendedExpression instead of NCalc.Expression
+            var expression = new ExtendedExpression(expressionString);
+
+            // Set parameters from the provided dictionary
+            foreach (var param in parameters)
+            {
+                expression.Parameters[param.Key] = param.Value;
+            }
+
+            // Add custom function support
+            expression.EvaluateFunction += (name, args) =>
+            {
+                // Custom function to check if a value is a number
+                if (name.Equals("isNumber", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Ensure there is exactly one parameter
+                    if (args.Parameters.Length != 1)
+                    {
+                        throw new ArgumentException("isNumber() requires exactly one parameter.");
+                    }
+                    var value = args.Parameters[0].Evaluate();
+                    // Try to parse the value as a double
+                    args.Result = double.TryParse(value?.ToString(), out _);
+                }
+            };
+
+            return expression;
+        }
+
         public override bool Evaluate(IDictionary<string, object> inputs)
         {
             try
             {
-                Console.WriteLine($"[DEBUG] Evaluating condition: '{_conditionExpression}' with inputs: {string.Join(", ", inputs)}");
-                Expression expression = new Expression(_conditionExpression);
+                Console.WriteLine($"[DEBUG] Evaluating condition: '{_conditionExpression}' with inputs: {string.Join(", ", inputs.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                
+                var expression = CreateAndConfigureExpression(_conditionExpression, inputs);
 
-                // Set parameters from inputs
-                foreach (var input in inputs)
+                if(expression.HasErrors())
                 {
-                    expression.Parameters[input.Key] = input.Value;
+                    // Log the error from the expression
+                    Console.WriteLine($"[DEBUG] Expression has error: {expression.Error}");
+                    return false;
                 }
-
-                // Add ArrayGet, IsNull, and Nvl support
-                expression.EvaluateFunction += (name, args) =>
-                {
-                    if (name == "ArrayGet")
-                    {
-                        var arrayObj = args.Parameters[0].Evaluate();
-                        var index = Convert.ToInt32(args.Parameters[1].Evaluate());
-                        object result = null;
-                        if (arrayObj is Array arr)
-                        {
-                            result = arr.GetValue(index);
-                        }
-                        else if (arrayObj is object[] objArr)
-                        {
-                            result = objArr[index];
-                        }
-                        else if (arrayObj is System.Collections.IEnumerable genEnum)
-                        {
-                            var enumerator = genEnum.GetEnumerator();
-                            int i = 0;
-                            while (enumerator.MoveNext())
-                            {
-                                if (i == index)
-                                {
-                                    result = enumerator.Current;
-                                    break;
-                                }
-                                i++;
-                            }
-                        }
-                        args.Result = result;
-                    }
-                    else if (name == "IsNull")
-                    {
-                        var value = args.Parameters[0].Evaluate();
-                        args.Result = value == null;
-                    }
-                    else if (name == "Nvl")
-                    {
-                        var value = args.Parameters[0].Evaluate();
-                        var defaultValue = args.Parameters[1].Evaluate();
-                        args.Result = value ?? defaultValue;
-                    }
-                };
 
                 var evalResult = expression.Evaluate();
                 Console.WriteLine($"[DEBUG] Evaluation result: {evalResult}");
@@ -86,6 +84,8 @@ namespace RuleEngine.Rules
             catch (Exception ex)
             {
                 Console.WriteLine($"[DEBUG] Exception during evaluation: {ex.Message}");
+                // It's often better to re-throw or handle specific exceptions
+                // For this conversion, we'll keep the original behavior.
                 return false;
             }
         }
@@ -93,24 +93,27 @@ namespace RuleEngine.Rules
         public override IDictionary<string, object> Execute(IDictionary<string, object> inputs)
         {
             if (inputs == null)
+            {
                 throw new ArgumentNullException(nameof(inputs));
+            }
 
             var results = new Dictionary<string, object>();
 
             try
             {
-                // First evaluate the condition
+                // First, evaluate the condition
                 if (!Evaluate(inputs))
                 {
-                    return results; // Return empty results if condition is not met
+                    return results; // Return empty results if the condition is not met
                 }
 
+                // If the condition is met, execute the actions
                 foreach (var actionExpr in _actionExpressions)
                 {
                     // Check if this is a callback action
                     if (IsCallbackAction(actionExpr.Value, out string callbackValue))
                     {
-                        // Handle callback
+                        // Handle callback logic as before
                         if (!inputs.ContainsKey("__callbacks__"))
                         {
                             inputs["__callbacks__"] = new List<Dictionary<string, object>>();
@@ -129,75 +132,26 @@ namespace RuleEngine.Rules
                             { "name", actionExpr.Key },
                             { "value", evaluatedCallbackValue }
                         });
-
-                        // Copy callbacks to results
-                        results["__callbacks__"] = callbacks;
                         continue;
                     }
 
-                    var expression = new NCalc.Expression(actionExpr.Value);
-
-                    // Set parameters from inputs
-                    foreach (var input in inputs)
-                    {
-                        expression.Parameters[input.Key] = input.Value;
-                    }
-
-                    // Add ArrayGet, IsNull, and Nvl support
-                    expression.EvaluateFunction += (name, args) =>
-                    {
-                        if (name == "ArrayGet")
-                        {
-                            var arrayObj = args.Parameters[0].Evaluate();
-                            var index = Convert.ToInt32(args.Parameters[1].Evaluate());
-                            object result = null;
-                            if (arrayObj is Array arr)
-                            {
-                                result = arr.GetValue(index);
-                            }
-                            else if (arrayObj is object[] objArr)
-                            {
-                                result = objArr[index];
-                            }
-                            else if (arrayObj is System.Collections.IEnumerable genEnum)
-                            {
-                                var enumerator = genEnum.GetEnumerator();
-                                int i = 0;
-                                while (enumerator.MoveNext())
-                                {
-                                    if (i == index)
-                                    {
-                                        result = enumerator.Current;
-                                        break;
-                                    }
-                                    i++;
-                                }
-                            }
-                            args.Result = result;
-                        }
-                        else if (name == "IsNull")
-                        {
-                            var value = args.Parameters[0].Evaluate();
-                            args.Result = value == null;
-                        }
-                        else if (name == "Nvl")
-                        {
-                            var value = args.Parameters[0].Evaluate();
-                            var defaultValue = args.Parameters[1].Evaluate();
-                            args.Result = value ?? defaultValue;
-                        }
-                    };
-
-                    // Include the other results in parameters
+                    // For action expressions, parameters should include the initial inputs
+                    // and any results from previous actions in this execution sequence.
+                    var currentParameters = new Dictionary<string, object>(inputs);
                     foreach (var result in results)
                     {
-                        expression.Parameters[result.Key] = result.Value;
+                        currentParameters[result.Key] = result.Value;
                     }
-
-                    // Evaluate the expression
-                    var actionResult = expression.Evaluate();
                     
-                    // Add result to output
+                    var expression = CreateAndConfigureExpression(actionExpr.Value, currentParameters);
+
+                    if(expression.HasErrors())
+                    {
+                        throw new InvalidOperationException($"Error in action expression for '{actionExpr.Key}': {expression.Error}");
+                    }
+                    
+                    // Evaluate the expression and store the result
+                    var actionResult = expression.Evaluate();
                     results[actionExpr.Key] = actionResult;
                 }
 
@@ -236,4 +190,4 @@ namespace RuleEngine.Rules
             return false;
         }
     }
-} 
+}
