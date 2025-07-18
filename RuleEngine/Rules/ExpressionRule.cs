@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using RuleEngine.Core;
 // Import the NCalcExtensions namespace
 using PanoramicData.NCalcExtensions;
@@ -66,7 +65,12 @@ namespace RuleEngine.Rules
         {
             try
             {
-                Console.WriteLine($"[DEBUG] Evaluating condition: '{_conditionExpression}' with inputs: {string.Join(", ", inputs.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                // var inputStrings = new List<string>();
+                // foreach (var kv in inputs)
+                // {
+                //     inputStrings.Add($"{kv.Key}={kv.Value}");
+                // }
+                // Console.WriteLine($"[DEBUG] Evaluating condition: '{_conditionExpression}' with inputs: {string.Join(", ", inputStrings)}");
                 
                 var expression = CreateAndConfigureExpression(_conditionExpression, inputs);
 
