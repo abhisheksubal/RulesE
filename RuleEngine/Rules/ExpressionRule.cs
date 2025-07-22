@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NCalc;
 using RuleEngine.Core;
+using RuleEngine.Extensions;
 
 namespace RuleEngine.Rules
 {
@@ -28,13 +29,11 @@ namespace RuleEngine.Rules
                 Console.WriteLine($"[DEBUG] Evaluating condition: '{_conditionExpression}' with inputs: {string.Join(", ", inputs)}");
                 Expression expression = new Expression(_conditionExpression);
 
-                // Set parameters from inputs
                 foreach (var input in inputs)
                 {
                     expression.Parameters[input.Key] = input.Value;
                 }
 
-                // Add ArrayGet, IsNull, and Nvl support
                 expression.EvaluateFunction += (name, args) =>
                 {
                     if (name == "ArrayGet")
@@ -77,6 +76,11 @@ namespace RuleEngine.Rules
                         var defaultValue = args.Parameters[1].Evaluate();
                         args.Result = value ?? defaultValue;
                     }
+                    else
+                    {
+                        // Route to our new custom function handler
+                        NCalcCustomFunctions.Evaluate(name, args);
+                    }
                 };
 
                 var evalResult = expression.Evaluate();
@@ -99,24 +103,20 @@ namespace RuleEngine.Rules
 
             try
             {
-                // First evaluate the condition
                 if (!Evaluate(inputs))
                 {
-                    return results; // Return empty results if condition is not met
+                    return results;
                 }
 
                 foreach (var actionExpr in _actionExpressions)
                 {
-                    // Check if this is a callback action
                     if (IsCallbackAction(actionExpr.Value, out string callbackValue))
                     {
-                        // Handle callback
                         if (!inputs.ContainsKey("__callbacks__"))
                         {
                             inputs["__callbacks__"] = new List<Dictionary<string, object>>();
                         }
 
-                        // Evaluate the callback value against results
                         object evaluatedCallbackValue = callbackValue;
                         if (results.ContainsKey(callbackValue))
                         {
@@ -130,20 +130,17 @@ namespace RuleEngine.Rules
                             { "value", evaluatedCallbackValue }
                         });
 
-                        // Copy callbacks to results
                         results["__callbacks__"] = callbacks;
                         continue;
                     }
 
                     var expression = new NCalc.Expression(actionExpr.Value);
 
-                    // Set parameters from inputs
                     foreach (var input in inputs)
                     {
                         expression.Parameters[input.Key] = input.Value;
                     }
-
-                    // Add ArrayGet, IsNull, and Nvl support
+                    
                     expression.EvaluateFunction += (name, args) =>
                     {
                         if (name == "ArrayGet")
@@ -186,22 +183,22 @@ namespace RuleEngine.Rules
                             var defaultValue = args.Parameters[1].Evaluate();
                             args.Result = value ?? defaultValue;
                         }
+                        else
+                        {
+                            // Route to our new custom function handler
+                            NCalcCustomFunctions.Evaluate(name, args);
+                        }
                     };
 
-                    // Include the other results in parameters
                     foreach (var result in results)
                     {
                         expression.Parameters[result.Key] = result.Value;
                     }
-
-                    // Evaluate the expression
-                    var actionResult = expression.Evaluate();
                     
-                    // Add result to output
+                    var actionResult = expression.Evaluate();
                     results[actionExpr.Key] = actionResult;
                 }
-
-                // Copy __callbacks__ from inputs to results if it exists
+                
                 if (inputs.ContainsKey("__callbacks__"))
                 {
                     results["__callbacks__"] = inputs["__callbacks__"];
@@ -219,14 +216,12 @@ namespace RuleEngine.Rules
         {
             callbackValue = null;
             
-            // Check for arrow syntax (=>)
             if (actionValue.StartsWith("=>"))
             {
                 callbackValue = actionValue.Substring(2).Trim();
                 return true;
             }
             
-            // Check for callback function syntax
             if (actionValue.StartsWith("callback(") && actionValue.EndsWith(")"))
             {
                 callbackValue = actionValue.Substring(9, actionValue.Length - 10).Trim();
@@ -236,4 +231,4 @@ namespace RuleEngine.Rules
             return false;
         }
     }
-} 
+}
