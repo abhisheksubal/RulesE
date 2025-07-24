@@ -58,6 +58,12 @@ namespace RuleEngine.Extensions
                 case "trim":
                     Trim(args);
                     break;
+                case "typeof":
+                    TypeOf(args);
+                    break;
+                case "try":
+                    Try(args);
+                    break;
             }
         }
 
@@ -248,6 +254,37 @@ namespace RuleEngine.Extensions
             }
             string param1 = (string)args.Parameters[0].Evaluate();
             args.Result = param1.Trim();
+        }
+
+        #endregion
+        
+        #region New Type-Checking and Safe Evaluation Functions
+
+        private static void TypeOf(FunctionArgs args)
+        {
+            if (args.Parameters.Length != 1)
+            {
+                throw new ArgumentException("typeOf() requires exactly one parameter.");
+            }
+            object value = args.Parameters[0].Evaluate();
+            args.Result = value?.GetType().Name ?? null;
+        }
+
+        private static void Try(FunctionArgs args)
+        {
+            if (args.Parameters.Length != 2)
+            {
+                throw new ArgumentException("try() requires two parameters: the expression to try and a fallback value.");
+            }
+
+            try
+            {
+                args.Result = args.Parameters[0].Evaluate();
+            }
+            catch (Exception)
+            {
+                args.Result = args.Parameters[1].Evaluate();
+            }
         }
 
         #endregion

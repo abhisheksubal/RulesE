@@ -4,7 +4,7 @@
       "ruleId": "rule1",
       "ruleName": "Age Check Rule",
       "type": "expression",
-      "conditionExpression": "age > 18",
+      "conditionExpression": "if(typeOf(age) == 'Int32' || typeOf(age) == 'Double', age > 18, false)",
       "actionExpressions": {
         "status": "'adult'"
       }
